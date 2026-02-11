@@ -1,0 +1,15 @@
+初次拉取后运行工程步骤
+0.确定环境为，VS2022和UE5.4.4
+1.右键.uproject，点击generate project files生成.sln文件（可以提前右键->选择引擎版本为5.4.4）
+2.VS打开.sln，在solution explorer里右键游戏项目（SIP）设为startup project
+3.顶部编译平台选择为Development Editor
+4.Build，完成后即可点击.uproject打开
+
+若编译不成功，在VS Installer里确定自己MSVC版本。尝试下载MSVC v143 - VS 2022 C++ x64/x86 Build Tools(v14.36-17.6)。
+出现过使用最新版本（14.44）编译失败。通过编译日志确定当前使用的MSVC版本，若非14.36，在SIP.Target.cs里大括号内加一行WindowsPlatform.ToolchainVersion = "14.36.32532";
+修改后如下
+Type = TargetType.Game;
+DefaultBuildSettings = BuildSettingsVersion.V5;
+IncludeOrderVersion = EngineIncludeOrderVersion.Unreal5_4;
+ExtraModuleNames.Add("SIP");
+WindowsPlatform.ToolchainVersion = "14.36.32532";
