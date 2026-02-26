@@ -13,9 +13,9 @@ class UInputMappingContext;
 class UInputAction;
 struct FInputActionValue;
 
-// TODO£º ½¨Á¢Ïà¹ØµÄComponent¿ò¼Ü
+// TODOï¼š å»ºç«‹ç›¸å…³çš„Componentæ¡†æ¶
 /*
-* ½ÇÉ«»ùÀà£¬¿¼ÂÇºóĞøÔö¼ÓPawn»ùÀà
+* è§’è‰²åŸºç±»ï¼Œè€ƒè™‘åç»­å¢åŠ PawnåŸºç±»
 */
 UCLASS(config=Game)
 class ASIPCharacter : public ACharacter

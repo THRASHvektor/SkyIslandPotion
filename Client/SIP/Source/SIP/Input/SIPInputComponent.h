@@ -14,7 +14,7 @@ class UObject;
 
 /**
  *
- *	Í¨¹ı´Ë×é¼ş£¬ÔÚÍâ²¿ÏµÍ³ÖĞ¿ÉÒÔÍ¨¹ıGameplayTagÀ´°ó¶¨ÊäÈëÊÂ¼ş£¬±ÜÃâÁËÖ±½ÓÒıÓÃInputAction×Ê²úµÄĞèÒª
+ *	é€šè¿‡æ­¤ç»„ä»¶ï¼Œåœ¨å¤–éƒ¨ç³»ç»Ÿä¸­å¯ä»¥é€šè¿‡GameplayTagæ¥ç»‘å®šè¾“å…¥äº‹ä»¶ï¼Œé¿å…äº†ç›´æ¥å¼•ç”¨InputActionèµ„äº§çš„éœ€è¦
  */
 UCLASS(Config = Input)
 class USIPInputComponent : public UEnhancedInputComponent
@@ -38,7 +38,7 @@ public:
 };
 
 /*
-* Ìá¹©×î»ù±¾²Ù×÷µÄ°ó¶¨
+* æä¾›æœ€åŸºæœ¬æ“ä½œçš„ç»‘å®š
 */
 template<class UserClass, typename FuncType>
 void USIPInputComponent::BindNativeAction(const USIPInputConfig* InputConfig, const FGameplayTag& InputTag, ETriggerEvent TriggerEvent, UserClass* Object, FuncType Func, bool bLogIfNotFound)
@@ -51,7 +51,7 @@ void USIPInputComponent::BindNativeAction(const USIPInputConfig* InputConfig, co
 }
 
 /*
-* Ìá¹©²Ù×÷¶ÔÓ¦ÄÜÁ¦ÊµÏÖµÄĞĞÎªµÄ°ó¶¨£¨´ıÊµÏÖ£©
+* æä¾›æ“ä½œå¯¹åº”èƒ½åŠ›å®ç°çš„è¡Œä¸ºçš„ç»‘å®šï¼ˆå¾…å®ç°ï¼‰
 */
 template<class UserClass, typename PressedFuncType, typename ReleasedFuncType>
 void USIPInputComponent::BindAbilityActions(const USIPInputConfig* InputConfig, UserClass* Object, PressedFuncType PressedFunc, ReleasedFuncType ReleasedFunc, TArray<uint32>& BindHandles)

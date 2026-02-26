@@ -6,7 +6,7 @@
 
 ASIPGameMode::ASIPGameMode()
 {
-	// Ğ´ËÀÄ¬ÈÏPawnÎªÖ¸¶¨Â·¾¶À¶Í¼
+	// å†™æ­»é»˜è®¤Pawnä¸ºæŒ‡å®šè·¯å¾„è“å›¾
 	/*static ConstructorHelpers::FClassFinder<APawn> PlayerPawnBPClass(TEXT("/Game/Blueprints/BP_ThirdPersonCharacter"));
 	if (PlayerPawnBPClass.Class != NULL)
 	{

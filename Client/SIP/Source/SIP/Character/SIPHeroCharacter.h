@@ -7,9 +7,9 @@
 #include "Input/SIPInputConfig.h"
 #include "SIPHeroCharacter.generated.h"
 
-//TODO�� 1. Ŀǰ���ڽ�ɫ����ֱ�Ӱ����룬�������ͨ����������ķ�ʽ��ʵ�� 2. ��ð���ҵĲٿض�����һ�������������ʱ�л��������󣨳�����
+//TODO： 1. 目前先在角色类中直接绑定输入，后续最好通过输入组件的方式来实现 2. 最好把玩家的操控独立成一个组件，方便随时切换操作对象（宠物、坐骑）
 /*
-* ������ٿص�Ӣ����
+* 玩家所操控的英雄类
 */
 UCLASS(config=Game)
 class ASIPHeroCharacter : public ASIPCharacter
