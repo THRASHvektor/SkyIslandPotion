@@ -15,7 +15,8 @@
 //////////////////////////////////////////////////////////////////////////
 // ASIPCharacter
 
-ASIPCharacter::ASIPCharacter()
+ASIPCharacter::ASIPCharacter(const FObjectInitializer& ObjectInitializer)
+	: Super(ObjectInitializer)
 {
 	// Set size for collision capsule
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
@@ -38,10 +39,23 @@ ASIPCharacter::ASIPCharacter()
 	GetCharacterMovement()->BrakingDecelerationWalking = 2000.f;
 	GetCharacterMovement()->BrakingDecelerationFalling = 1500.0f;
 
+	// 创建角色组件
+	CreateComponent();
+
 }
 
 void ASIPCharacter::BeginPlay()
 {
 	// Call the base class  
 	Super::BeginPlay();
+}
+
+void ASIPCharacter::CreateComponent()
+{
+	// 在这里创建角色需要的组件
+}
+
+void ASIPCharacter::PostInitializeComponents()
+{
+	Super::PostInitializeComponents();
 }
