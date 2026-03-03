@@ -17,18 +17,11 @@ class ASIPPawn : public APawn
 
 public:
 	ASIPPawn(const FObjectInitializer& ObjectInitializer);
-	
-
-protected:
-
 
 protected:
 
 	// To add mapping context
 	virtual void BeginPlay();
-
-    // 在这里创建Pawn需要的组件
-	virtual void CreateComponent();
 
     // 在这里初始化组件
 	virtual void PostInitializeComponents() override;
