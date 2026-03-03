@@ -19,6 +19,8 @@ public class SIP : ModuleRules
                                                             "Engine",
                                                             "GameplayTags",
                                                             "InputCore", 
+                                                            "GameplayAbilities",
+                                                            "GameplayTasks",
                                                             "EnhancedInput" });
 
 

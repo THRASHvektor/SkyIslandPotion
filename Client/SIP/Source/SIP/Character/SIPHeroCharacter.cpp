@@ -12,10 +12,13 @@
 #include "InputActionValue.h"
 #include "SIPGameplayTags.h"
 #include "SIPLogCategory.h"
+#include "Ability/SIPAbilitySystemComponent.h"
+#include "Ability/SIPAbilitySet.h"
 
 
 
-ASIPHeroCharacter::ASIPHeroCharacter()
+ASIPHeroCharacter::ASIPHeroCharacter(const FObjectInitializer& ObjectInitializer)
+	: Super(ObjectInitializer)
 {
 	// Set size for collision capsule
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
@@ -48,9 +51,6 @@ ASIPHeroCharacter::ASIPHeroCharacter()
 	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName); // Attach the camera to the end of the boom and let the boom adjust to match the controller orientation
 	FollowCamera->bUsePawnControlRotation = false; // Camera does not rotate relative to arm
 
-	// Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
-	// are set in the derived blueprint asset named ThirdPersonCharacter (to avoid direct content references in C++)
-
 }
 
 void ASIPHeroCharacter::BeginPlay()
@@ -59,6 +59,29 @@ void ASIPHeroCharacter::BeginPlay()
 	Super::BeginPlay();
 }
 
+void ASIPHeroCharacter::PostInitializeComponents()
+{
+	Super::PostInitializeComponents();
+
+	// 初始化AbilitySystemComponent流程，后续可移至基类
+	if (AbilitySystemComponent)
+	{
+		AbilitySystemComponent->InitAbilityActorInfo(this, this);
+		// register attribute set
+
+		// grant abilities
+		FSIPAbilitySet_GrantedHandles GrantedHandles;
+		for(const TObjectPtr<USIPAbilitySet>& Set : AbilitySets)
+		{
+			if (Set)
+			{
+				Set->GiveToAbilitySystem(AbilitySystemComponent, &GrantedHandles);
+			}
+		}
+		// initial gameplay effects
+
+	}
+}
 
 void ASIPHeroCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
@@ -72,20 +95,28 @@ void ASIPHeroCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCo
 	Subsystem->ClearAllMappings();
 	Subsystem->AddMappingContext(InputMappingContext, 0);
 	
-	
+	/* 后续可将下列绑定操作统一移至IC完成 */
 	// Set up action bindings
 	if (UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(PlayerInputComponent)) {
 		if (InputConfig)
 		{
-			// Jumping
-			EnhancedInputComponent->BindAction(InputConfig->FindNativeInputActionForTag(SIPGameplayTags::InputTag_Jump), ETriggerEvent::Started, this, &ACharacter::Jump);
-			EnhancedInputComponent->BindAction(InputConfig->FindNativeInputActionForTag(SIPGameplayTags::InputTag_Jump), ETriggerEvent::Completed, this, &ACharacter::StopJumping);
+			// // Jumping
+			// EnhancedInputComponent->BindAction(InputConfig->FindNativeInputActionForTag(SIPGameplayTags::InputTag_Jump), ETriggerEvent::Started, this, &ACharacter::Jump);
+			// EnhancedInputComponent->BindAction(InputConfig->FindNativeInputActionForTag(SIPGameplayTags::InputTag_Jump), ETriggerEvent::Completed, this, &ACharacter::StopJumping);
 
 			// Moving
-			EnhancedInputComponent->BindAction(InputConfig->FindNativeInputActionForTag(SIPGameplayTags::InputTag_Move), ETriggerEvent::Triggered, this, &ASIPHeroCharacter::Move);
+			EnhancedInputComponent->BindAction(InputConfig->FindNativeInputActionForTag(SIPGameplayTags::InputTag_Move), ETriggerEvent::Triggered, this, &ASIPHeroCharacter::Input_Move);
 
 			// Looking
-			EnhancedInputComponent->BindAction(InputConfig->FindNativeInputActionForTag(SIPGameplayTags::InputTag_Look_Mouse), ETriggerEvent::Triggered, this, &ASIPHeroCharacter::Look);
+			EnhancedInputComponent->BindAction(InputConfig->FindNativeInputActionForTag(SIPGameplayTags::InputTag_Look_Mouse), ETriggerEvent::Triggered, this, &ASIPHeroCharacter::Input_Look);
+
+			TArray<uint32> BindHandles;	// 可将此数列缓存用于解绑
+			// Ability Input
+			for (const FSIPInputAction& Action : InputConfig->AbilityInputActions)
+			{
+				BindHandles.Add(EnhancedInputComponent->BindAction(Action.InputAction, ETriggerEvent::Triggered, this, &ASIPHeroCharacter::Input_AbilityInputTagPressed, Action.InputTag).GetHandle());
+				BindHandles.Add(EnhancedInputComponent->BindAction(Action.InputAction, ETriggerEvent::Completed, this, &ASIPHeroCharacter::Input_AbilityInputTagReleased, Action.InputTag).GetHandle());
+			}
 		}
 		else
 		{
@@ -99,7 +130,7 @@ void ASIPHeroCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCo
 	}
 }
 
-void ASIPHeroCharacter::Move(const FInputActionValue& Value)
+void ASIPHeroCharacter::Input_Move(const FInputActionValue& Value)
 {
 	// input is a Vector2D
 	FVector2D MovementVector = Value.Get<FVector2D>();
@@ -122,7 +153,7 @@ void ASIPHeroCharacter::Move(const FInputActionValue& Value)
 	}
 }
 
-void ASIPHeroCharacter::Look(const FInputActionValue& Value)
+void ASIPHeroCharacter::Input_Look(const FInputActionValue& Value)
 {
 	// input is a Vector2D
 	FVector2D LookAxisVector = Value.Get<FVector2D>();
@@ -132,5 +163,22 @@ void ASIPHeroCharacter::Look(const FInputActionValue& Value)
 		// add yaw and pitch input to controller
 		AddControllerYawInput(LookAxisVector.X);
 		AddControllerPitchInput(LookAxisVector.Y);
+	}
+}
+
+
+void ASIPHeroCharacter::Input_AbilityInputTagPressed(FGameplayTag InputTag)
+{
+	if(USIPAbilitySystemComponent* SIPASC = GetSIPAbilitySystemComponent())
+	{
+		SIPASC->AbilityInputTagPressed(InputTag);
+	}
+}
+
+void ASIPHeroCharacter::Input_AbilityInputTagReleased(FGameplayTag InputTag)
+{
+	if(USIPAbilitySystemComponent* SIPASC = GetSIPAbilitySystemComponent())
+	{
+		SIPASC->AbilityInputTagReleased(InputTag);
 	}
 }
