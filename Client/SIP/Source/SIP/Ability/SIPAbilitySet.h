@@ -7,6 +7,7 @@
 #include "SIPAbilitySet.generated.h"
 
 class UGameplayAbility;
+class UAttributeSet;
 class UAbilitySystemComponent;
 struct FGameplayAbilitySpecHandle;
 
@@ -33,6 +34,24 @@ public:
 
 
 /**
+ * FSIPAbilitySet_AttributeSet
+ *
+ *	一个用于注册的AttributeSet结构体
+ */
+USTRUCT(BlueprintType)
+struct FSIPAbilitySet_AttributeSet
+{
+	GENERATED_BODY()
+
+public:
+
+	// AttributeSet to grant.
+	UPROPERTY(EditDefaultsOnly)
+	TSubclassOf<UAttributeSet> AttributeSet = nullptr;
+};
+
+
+/**
  * FSIPAbilitySet_GrantedHandles
  *
  *	用于储存已经赋予给角色的GA的句柄
@@ -45,8 +64,7 @@ struct FSIPAbilitySet_GrantedHandles
 public:
 
 	void AddAbilitySpecHandle(const FGameplayAbilitySpecHandle& Handle);
-	// void AddGameplayEffectHandle(const FActiveGameplayEffectHandle& Handle);
-	// void AddAttributeSet(UAttributeSet* Set);
+	void AddAttributeSet(UAttributeSet* AttributeSet);
 
 	void TakeFromAbilitySystem(UAbilitySystemComponent* ASC);
 
@@ -88,4 +106,8 @@ protected:
 	// 要赋予的Ability列表
 	UPROPERTY(EditDefaultsOnly, Category = "Gameplay Abilities", meta=(TitleProperty=Ability))
 	TArray<FSIPAbilitySet_GameplayAbility> GrantedGameplayAbilities;
+
+	// 要赋予的AttributeSet列表
+	UPROPERTY(EditDefaultsOnly, Category = "Gameplay Attributes", meta=(TitleProperty=AttributeSet))
+	TArray<FSIPAbilitySet_AttributeSet> GrantedAttributeSets;
 };

@@ -1,3 +1,5 @@
+// Copyright Epic Games, Inc. All Rights Reserved.
+
 #include "SIPAbilitySet.h"
 #include "Abilities/GameplayAbility.h"
 #include "AbilitySystemComponent.h"
@@ -13,6 +15,14 @@ void FSIPAbilitySet_GrantedHandles::AddAbilitySpecHandle(const FGameplayAbilityS
 	}
 }
 
+void FSIPAbilitySet_GrantedHandles::AddAttributeSet(UAttributeSet* AttributeSet)
+{
+	if (AttributeSet)
+	{
+		GrantedAttributeSets.Add(AttributeSet);
+	}
+}
+
 void FSIPAbilitySet_GrantedHandles::TakeFromAbilitySystem(UAbilitySystemComponent* ASC)
 {
 	check(ASC);
@@ -25,24 +35,17 @@ void FSIPAbilitySet_GrantedHandles::TakeFromAbilitySystem(UAbilitySystemComponen
 		}
 	}
 
-    AbilitySpecHandles.Reset();
+	AbilitySpecHandles.Reset();
 
-	// for (const FActiveGameplayEffectHandle& Handle : GameplayEffectHandles)
-	// {
-	// 	if (Handle.IsValid())
-	// 	{
-	// 		LyraASC->RemoveActiveGameplayEffect(Handle);
-	// 	}
-	// }
-
-	// for (UAttributeSet* Set : GrantedAttributeSets)
-	// {
-	// 	LyraASC->RemoveSpawnedAttribute(Set);
-	// }
-
+	for (UAttributeSet* Set : GrantedAttributeSets)
+	{
+		if (Set)
+		{
+			ASC->RemoveSpawnedAttribute(Set);
+		}
+	}
 	
-	// GameplayEffectHandles.Reset();
-	// GrantedAttributeSets.Reset();
+	GrantedAttributeSets.Reset();
 }
 
 
@@ -57,7 +60,6 @@ void USIPAbilitySet::GiveToAbilitySystem(UAbilitySystemComponent* ASC, FSIPAbili
 {
     check(ASC);
 
-    // Grant the gameplay abilities.
     for (int32 AbilityIndex = 0; AbilityIndex < GrantedGameplayAbilities.Num(); ++AbilityIndex)
     {
         const FSIPAbilitySet_GameplayAbility& AbilityToGrant = GrantedGameplayAbilities[AbilityIndex];
@@ -79,6 +81,25 @@ void USIPAbilitySet::GiveToAbilitySystem(UAbilitySystemComponent* ASC, FSIPAbili
         if (OutGrantedHandles)
         {
             OutGrantedHandles->AddAbilitySpecHandle(AbilitySpecHandle);
+        }
+    }
+
+    for (int32 AttributeSetIndex = 0; AttributeSetIndex < GrantedAttributeSets.Num(); ++AttributeSetIndex)
+    {
+        const FSIPAbilitySet_AttributeSet& AttributeSetToGrant = GrantedAttributeSets[AttributeSetIndex];
+
+        if (!IsValid(AttributeSetToGrant.AttributeSet))
+        {
+            UE_LOG(LogSIPAbilitySystem, Error, TEXT("GrantedAttributeSets[%d] on ability set [%s] is not valid."), AttributeSetIndex, *GetNameSafe(this));
+            continue;
+        }
+
+        UAttributeSet* NewAttributeSet = NewObject<UAttributeSet>(ASC->GetOwner(), AttributeSetToGrant.AttributeSet);
+        ASC->AddAttributeSetSubobject(NewAttributeSet);
+
+        if (OutGrantedHandles)
+        {
+            OutGrantedHandles->AddAttributeSet(NewAttributeSet);
         }
     }
 }

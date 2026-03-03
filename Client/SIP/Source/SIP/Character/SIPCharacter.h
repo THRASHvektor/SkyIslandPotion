@@ -11,11 +11,10 @@
 class USIPAbilitySet;
 class UAbilitySystemComponent;
 class USIPAbilitySystemComponent;
-// TODO： 建立相关的Component框架
-/*
-* 角色基类，用于所有会有AI、移动等行为的Entity，包含宠物、坐骑等
-*/
-UCLASS(config=Game)
+class UAttributeSet;
+class USIPHealthSet;
+
+UCLASS()
 class ASIPCharacter : public ACharacter, public IAbilitySystemInterface
 {
 	GENERATED_BODY()
@@ -28,9 +27,17 @@ public:
 
 	USIPAbilitySystemComponent* GetSIPAbilitySystemComponent() const;
 
+	// AttributeSet getters
+	USIPHealthSet* GetSIPHealthSet() const;
+
 	// 用于赋予角色ability的列表，映射Inputtag和ability
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "SIP|Abilities")
 	TArray<TObjectPtr<USIPAbilitySet>> AbilitySets;
+
+	// Death handling
+	virtual void OnDeath();
+	virtual void OnDeathStarted();
+	virtual void OnDeathStopped();
 
 protected:
 
@@ -45,4 +52,3 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "GAS")
 	TObjectPtr<USIPAbilitySystemComponent> AbilitySystemComponent;
 };
-
