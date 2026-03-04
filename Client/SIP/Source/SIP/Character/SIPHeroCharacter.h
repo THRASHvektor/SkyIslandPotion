@@ -10,7 +10,9 @@
 class USpringArmComponent;
 class UCameraComponent;
 class UInputMappingContext;
+class UGameplayEffect;
 struct FInputActionValue;
+struct FActiveGameplayEffectHandle;
 
 
 //TODO： 1. 目前先在角色类中直接绑定输入，后续最好通过输入组件的方式来实现 2. 最好把玩家的操控独立成一个组件，方便随时切换操作对象（宠物、坐骑）
@@ -56,6 +58,8 @@ protected:
 
 	/** Called for looking input */
 	void Input_Look(const FInputActionValue& Value);
+
+	
 			
 	// APawn interface
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;

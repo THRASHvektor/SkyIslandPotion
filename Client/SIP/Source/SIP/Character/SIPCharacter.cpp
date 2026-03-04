@@ -48,7 +48,7 @@ USIPHealthSet* ASIPCharacter::GetSIPHealthSet() const
 {
 	if (AbilitySystemComponent)
 	{
-		return AbilitySystemComponent->GetSet<USIPHealthSet>();
+		return const_cast<USIPHealthSet*>(AbilitySystemComponent->GetSet<USIPHealthSet>());
 	}
 	return nullptr;
 }

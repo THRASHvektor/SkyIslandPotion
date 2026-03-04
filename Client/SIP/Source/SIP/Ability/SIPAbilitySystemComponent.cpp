@@ -92,6 +92,12 @@ void USIPAbilitySystemComponent::ProcessAbilityInput(float DeltaTime, bool bGame
 					// Ability is active so pass along the input event.
 					AbilitySpecInputReleased(*AbilitySpec);
 				}
+				else
+				{
+					// Ability未激活但收到了Release事件，可能是快速按下松开
+					// 这种情况下如果Ability正在激活过程中，也需要通知它
+					AbilitySpecInputReleased(*AbilitySpec);
+				}
 			}
 		}
 	}

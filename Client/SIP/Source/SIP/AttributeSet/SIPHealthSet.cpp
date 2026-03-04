@@ -62,7 +62,8 @@ void USIPHealthSet::PostAttributeChange(const FGameplayAttribute& Attribute, flo
 
 	if (Attribute == GetMaxHealthAttribute())
 	{
-		if (GetHealth() > NewValue)
+		// 使用 GetHealthAttribute().GetNumericValue(this) 获取当前 Health 值
+		if (GetHealthAttribute().GetNumericValue(this) > NewValue)
 		{
 			UAbilitySystemComponent* ASC = GetOwningAbilitySystemComponent();
 			if (ASC)
@@ -83,13 +84,19 @@ void USIPHealthSet::PostAttributeChange(const FGameplayAttribute& Attribute, flo
 			UE_LOG(LogSIP, Log, TEXT("Player Died"));
 		}
 	}
+
+	if (Attribute == GetMoveSpeedAttribute())
+	{
+		UE_LOG(LogSIP, Log, TEXT("MoveSpeed changed: %f -> %f"), OldValue, NewValue);
+	}
 }
 
 void USIPHealthSet::ClampAttribute(const FGameplayAttribute& Attribute, float& NewValue) const
 {
 	if (Attribute == GetHealthAttribute())
 	{
-		NewValue = FMath::Clamp(NewValue, 0.0f, GetMaxHealth());
+		// 使用 GetMaxHealthAttribute().GetNumericValue(this) 获取当前 MaxHealth 值
+		NewValue = FMath::Clamp(NewValue, 0.0f, GetMaxHealthAttribute().GetNumericValue(this));
 	}
 	else if (Attribute == GetMaxHealthAttribute())
 	{

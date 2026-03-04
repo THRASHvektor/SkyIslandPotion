@@ -1,10 +1,10 @@
-// Copyright Epic Games, Inc. All Rights Reserved.
-
 #pragma once
 
 #include "Engine/DataAsset.h"
 #include "GameplayTagContainer.h"
+#include "GameplayEffect.h"
 #include "SIPAbilitySet.generated.h"
+
 
 class UGameplayAbility;
 class UAttributeSet;
@@ -34,9 +34,33 @@ public:
 
 
 /**
+ * FLyraAbilitySet_GameplayEffect
+ *
+ *	Data used by the ability set to grant gameplay effects.
+ *  新增：用于支持GAS的GameplayEffect系统，允许在AbilitySet中同时授权GameplayEffect
+ */
+USTRUCT(BlueprintType)
+struct FSIPAbilitySet_GameplayEffect
+{
+	GENERATED_BODY()
+
+public:
+
+	// Gameplay effect to grant.
+	UPROPERTY(EditDefaultsOnly)
+	TSubclassOf<UGameplayEffect> GameplayEffect = nullptr;
+
+	// Level of gameplay effect to grant.
+	UPROPERTY(EditDefaultsOnly)
+	float EffectLevel = 1.0f;
+};
+
+
+/**
  * FSIPAbilitySet_AttributeSet
  *
  *	一个用于注册的AttributeSet结构体
+ * 新增：用于支持GAS的Attribute系统，允许在AbilitySet中同时授权AttributeSet
  */
 USTRUCT(BlueprintType)
 struct FSIPAbilitySet_AttributeSet
@@ -64,6 +88,12 @@ struct FSIPAbilitySet_GrantedHandles
 public:
 
 	void AddAbilitySpecHandle(const FGameplayAbilitySpecHandle& Handle);
+
+	// 新增：用于追踪授权的GameplayEffect句柄，便于后续移除
+	void AddGameplayEffectHandle(const FActiveGameplayEffectHandle& Handle);
+
+	
+	// 新增：用于追踪授权的AttributeSet，便于后续移除
 	void AddAttributeSet(UAttributeSet* AttributeSet);
 
 	void TakeFromAbilitySystem(UAbilitySystemComponent* ASC);
@@ -74,13 +104,13 @@ protected:
 	UPROPERTY()
 	TArray<FGameplayAbilitySpecHandle> AbilitySpecHandles;
 
-	// // Handles to the granted gameplay effects.
-	// UPROPERTY()
-	// TArray<FActiveGameplayEffectHandle> GameplayEffectHandles;
-
-	// // Pointers to the granted attribute sets
-	// UPROPERTY()
-	// TArray<TObjectPtr<UAttributeSet>> GrantedAttributeSets;
+	// 新增：用于存储已授权的GameplayEffect句柄
+	UPROPERTY()
+	TArray<FActiveGameplayEffectHandle> GameplayEffectHandles;
+	
+	// 新增：用于追踪已授权的AttributeSet，便于后续移除
+	UPROPERTY()
+	TArray<TObjectPtr<UAttributeSet>> GrantedAttributeSets;
 };
 
 
@@ -110,4 +140,8 @@ protected:
 	// 要赋予的AttributeSet列表
 	UPROPERTY(EditDefaultsOnly, Category = "Gameplay Attributes", meta=(TitleProperty=AttributeSet))
 	TArray<FSIPAbilitySet_AttributeSet> GrantedAttributeSets;
+
+	// 新增：要赋予的GameplayEffect列表，用于初始属性设置或被动效果
+	UPROPERTY(EditDefaultsOnly, Category = "Gameplay Effects", meta=(TitleProperty=GameplayEffect))
+	TArray<FSIPAbilitySet_GameplayEffect> GrantedGameplayEffects;
 };
