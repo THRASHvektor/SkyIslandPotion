@@ -14,6 +14,7 @@
 #include "SIPLogCategory.h"
 #include "Ability/SIPAbilitySystemComponent.h"
 #include "Ability/SIPAbilitySet.h"
+#include "GameplayEffect.h"
 
 
 
@@ -67,7 +68,8 @@ void ASIPHeroCharacter::PostInitializeComponents()
 	if (AbilitySystemComponent)
 	{
 		AbilitySystemComponent->InitAbilityActorInfo(this, this);
-		// register attribute set
+		
+		UE_LOG(LogSIPCharacter, Log, TEXT("ASC Initialized. Granting abilities..."));
 
 		// grant abilities
 		FSIPAbilitySet_GrantedHandles GrantedHandles;
@@ -78,8 +80,15 @@ void ASIPHeroCharacter::PostInitializeComponents()
 				Set->GiveToAbilitySystem(AbilitySystemComponent, &GrantedHandles);
 			}
 		}
-		// initial gameplay effects
-
+					
+		// 打印已激活的Ability信息用于调试
+		UE_LOG(LogSIPCharacter, Log, TEXT("Total Activatable Abilities: %d"), AbilitySystemComponent->GetActivatableAbilities().Num());
+		for (const FGameplayAbilitySpec& Spec : AbilitySystemComponent->GetActivatableAbilities())
+		{
+			UE_LOG(LogSIPCharacter, Log, TEXT("  Ability: %s, DynamicTags: %s"), 
+				*GetNameSafe(Spec.Ability), 
+				*Spec.DynamicAbilityTags.ToString());
+		}
 	}
 }
 
@@ -112,11 +121,14 @@ void ASIPHeroCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCo
 
 			TArray<uint32> BindHandles;	// 可将此数列缓存用于解绑
 			// Ability Input
+			// 按下用Started（瞬间触发一次），松开用Completed
 			for (const FSIPInputAction& Action : InputConfig->AbilityInputActions)
 			{
-				BindHandles.Add(EnhancedInputComponent->BindAction(Action.InputAction, ETriggerEvent::Triggered, this, &ASIPHeroCharacter::Input_AbilityInputTagPressed, Action.InputTag).GetHandle());
+				BindHandles.Add(EnhancedInputComponent->BindAction(Action.InputAction, ETriggerEvent::Started, this, &ASIPHeroCharacter::Input_AbilityInputTagPressed, Action.InputTag).GetHandle());
 				BindHandles.Add(EnhancedInputComponent->BindAction(Action.InputAction, ETriggerEvent::Completed, this, &ASIPHeroCharacter::Input_AbilityInputTagReleased, Action.InputTag).GetHandle());
 			}
+			
+
 		}
 		else
 		{
@@ -169,6 +181,7 @@ void ASIPHeroCharacter::Input_Look(const FInputActionValue& Value)
 
 void ASIPHeroCharacter::Input_AbilityInputTagPressed(FGameplayTag InputTag)
 {
+	UE_LOG(LogSIPCharacter, Log, TEXT("Input_AbilityInputTagPressed: %s"), *InputTag.ToString());
 	if(USIPAbilitySystemComponent* SIPASC = GetSIPAbilitySystemComponent())
 	{
 		SIPASC->AbilityInputTagPressed(InputTag);
@@ -177,8 +190,12 @@ void ASIPHeroCharacter::Input_AbilityInputTagPressed(FGameplayTag InputTag)
 
 void ASIPHeroCharacter::Input_AbilityInputTagReleased(FGameplayTag InputTag)
 {
+	UE_LOG(LogSIPCharacter, Log, TEXT("Input_AbilityInputTagReleased: %s"), *InputTag.ToString());
 	if(USIPAbilitySystemComponent* SIPASC = GetSIPAbilitySystemComponent())
 	{
 		SIPASC->AbilityInputTagReleased(InputTag);
 	}
 }
+
+
+

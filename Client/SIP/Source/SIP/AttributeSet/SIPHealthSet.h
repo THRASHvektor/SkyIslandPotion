@@ -20,6 +20,12 @@ public:
 
 public:
 
+	// 使用 GAS 宏定义 Getter 函数
+	GAMEPLAYATTRIBUTE_PROPERTY_GETTER(USIPHealthSet, Health);
+	GAMEPLAYATTRIBUTE_PROPERTY_GETTER(USIPHealthSet, MaxHealth);
+	GAMEPLAYATTRIBUTE_PROPERTY_GETTER(USIPHealthSet, Healing);
+	GAMEPLAYATTRIBUTE_PROPERTY_GETTER(USIPHealthSet, MoveSpeed);
+
 	// Primary Attribute
 	UPROPERTY(BlueprintReadOnly, Category = "SIP|Health", ReplicatedUsing = OnRep_Health)
 	FGameplayAttributeData Health;
@@ -28,7 +34,7 @@ public:
 	FGameplayAttributeData MaxHealth;
 
 	// Clamped between 0 and MaxHealth
-	UPROPERTY(BlueprintReadOnly, Category = "SIP|Health", ReplicatedUsing = OnRep_Health)
+	UPROPERTY(BlueprintReadOnly, Category = "SIP|Health", ReplicatedUsing = OnRep_Healing)
 	FGameplayAttributeData Healing;
 
 	// Secondary Attribute

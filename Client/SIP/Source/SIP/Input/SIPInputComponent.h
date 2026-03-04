@@ -51,14 +51,15 @@ void USIPInputComponent::BindNativeAction(const USIPInputConfig* InputConfig, co
 }
 
 /*
-* 提供操作对应能力实现的行为的绑定（待实现）
+* 提供操作对应能力实现的行为的绑定
+* 将InputConfig中的AbilityInputActions绑定到对应的Pressed/Released函数
 */
 template<class UserClass, typename PressedFuncType, typename ReleasedFuncType>
 void USIPInputComponent::BindAbilityActions(const USIPInputConfig* InputConfig, UserClass* Object, PressedFuncType PressedFunc, ReleasedFuncType ReleasedFunc, TArray<uint32>& BindHandles)
 {
 	check(InputConfig);
 
-	/*for (const FLyraInputAction& Action : InputConfig->AbilityInputActions)
+	for (const FSIPInputAction& Action : InputConfig->AbilityInputActions)
 	{
 		if (Action.InputAction && Action.InputTag.IsValid())
 		{
@@ -72,5 +73,5 @@ void USIPInputComponent::BindAbilityActions(const USIPInputConfig* InputConfig, 
 				BindHandles.Add(BindAction(Action.InputAction, ETriggerEvent::Completed, Object, ReleasedFunc, Action.InputTag).GetHandle());
 			}
 		}
-	}*/
+	}
 }

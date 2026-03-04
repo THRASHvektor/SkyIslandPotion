@@ -5,8 +5,9 @@
 #include "AbilitySystemComponent.h"
 #include "GameplayAbilitySpec.h"
 #include "SIPLogCategory.h"
+#include "AttributeSet.h"
 
-
+// 用于存储已授权的AbilitySpec句柄
 void FSIPAbilitySet_GrantedHandles::AddAbilitySpecHandle(const FGameplayAbilitySpecHandle& Handle)
 {
 	if (Handle.IsValid())
@@ -15,6 +16,16 @@ void FSIPAbilitySet_GrantedHandles::AddAbilitySpecHandle(const FGameplayAbilityS
 	}
 }
 
+// 新增：用于存储已授权的GameplayEffect句柄
+void FSIPAbilitySet_GrantedHandles::AddGameplayEffectHandle(const FActiveGameplayEffectHandle& Handle)
+{
+	if (Handle.IsValid())
+	{
+		GameplayEffectHandles.Add(Handle);
+	}
+}
+
+// 用于存储已授权的AttributeSet指针
 void FSIPAbilitySet_GrantedHandles::AddAttributeSet(UAttributeSet* AttributeSet)
 {
 	if (AttributeSet)
@@ -25,6 +36,7 @@ void FSIPAbilitySet_GrantedHandles::AddAttributeSet(UAttributeSet* AttributeSet)
 
 void FSIPAbilitySet_GrantedHandles::TakeFromAbilitySystem(UAbilitySystemComponent* ASC)
 {
+    // 
 	check(ASC);
     
 	for (const FGameplayAbilitySpecHandle& Handle : AbilitySpecHandles)
@@ -100,6 +112,33 @@ void USIPAbilitySet::GiveToAbilitySystem(UAbilitySystemComponent* ASC, FSIPAbili
         if (OutGrantedHandles)
         {
             OutGrantedHandles->AddAttributeSet(NewAttributeSet);
+        }
+    }
+
+    // 新增：赋予GameplayEffects（用于初始属性设置或被动效果）
+    for (int32 EffectIndex = 0; EffectIndex < GrantedGameplayEffects.Num(); ++EffectIndex)
+    {
+        const FSIPAbilitySet_GameplayEffect& EffectToGrant = GrantedGameplayEffects[EffectIndex];
+
+        if (!IsValid(EffectToGrant.GameplayEffect))
+        {
+            UE_LOG(LogSIPAbilitySystem, Error, TEXT("GrantedGameplayEffects[%d] on ability set [%s] is not valid."), EffectIndex, *GetNameSafe(this));
+            continue;
+        }
+
+        UGameplayEffect* EffectCDO = EffectToGrant.GameplayEffect->GetDefaultObject<UGameplayEffect>();
+        FGameplayEffectContextHandle EffectContext = ASC->MakeEffectContext();
+        EffectContext.AddSourceObject(SourceObject);
+
+        const FActiveGameplayEffectHandle EffectHandle = ASC->ApplyGameplayEffectToSelf(
+            EffectCDO, 
+            EffectToGrant.EffectLevel, 
+            EffectContext
+        );
+
+        if (OutGrantedHandles)
+        {
+            OutGrantedHandles->AddGameplayEffectHandle(EffectHandle);
         }
     }
 }

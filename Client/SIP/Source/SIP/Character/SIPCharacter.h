@@ -14,6 +14,11 @@ class USIPAbilitySystemComponent;
 class UAttributeSet;
 class USIPHealthSet;
 
+/**
+ * ASIPCharacter
+ * 
+ * 角色基类，用于所有可交互的游戏实体
+ */
 UCLASS()
 class ASIPCharacter : public ACharacter, public IAbilitySystemInterface
 {
@@ -27,14 +32,14 @@ public:
 
 	USIPAbilitySystemComponent* GetSIPAbilitySystemComponent() const;
 
-	// AttributeSet getters
+	// 新增：获取Character的Health属性集
 	USIPHealthSet* GetSIPHealthSet() const;
 
 	// 用于赋予角色ability的列表，映射Inputtag和ability
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "SIP|Abilities")
 	TArray<TObjectPtr<USIPAbilitySet>> AbilitySets;
 
-	// Death handling
+	// 新增：死亡处理回调
 	virtual void OnDeath();
 	virtual void OnDeathStarted();
 	virtual void OnDeathStopped();
