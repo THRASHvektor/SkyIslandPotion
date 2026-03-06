@@ -32,6 +32,7 @@ void ASIPCharacter::BeginPlay()
 void ASIPCharacter::PostInitializeComponents()
 {
 	Super::PostInitializeComponents();
+	
 }
 
 UAbilitySystemComponent* ASIPCharacter::GetAbilitySystemComponent() const
