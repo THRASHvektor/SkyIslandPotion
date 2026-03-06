@@ -6,7 +6,9 @@
 
 
 USIPInputComponent::USIPInputComponent(const FObjectInitializer& ObjectInitializer)
+	:Super(ObjectInitializer)
 {
+	
 }
 
 void USIPInputComponent::AddInputMappings(const USIPInputConfig* InputConfig, UEnhancedInputLocalPlayerSubsystem* InputSubsystem) const
