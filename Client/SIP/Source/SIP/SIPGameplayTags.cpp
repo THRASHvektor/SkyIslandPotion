@@ -28,6 +28,8 @@ namespace SIPGameplayTags
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(InputTag_Jump, "InputTag.Jump", "Jump input.");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(InputTag_Sprint, "InputTag.Sprint", "Sprint input.");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(InputTag_Dash, "InputTag.Dash", "Dash input.");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(InputTag_Attack, "InputTag.Attack", "Attack input.");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(InputTag_Potion_Heal, "InputTag.Potion.Heal", "Healing potion input.");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Cooldown_Dash, "Cooldown.Dash", "Dash cooldown.");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(InputTag_Walk, "InputTag.Walk", "Walk input.");
 
@@ -37,6 +39,7 @@ namespace SIPGameplayTags
 	// Z 说明：角色状态标签，用于标记当前状态
 	// 使用场景：技能可以检查这些标签来决定是否激活或改变行为
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(State_Movement_Jumping, "State.Movement.Jumping", "Jumping state.");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(State_Dead, "State.Dead", "Character is dead.");
 
 	// ==================== System Tags ====================
 	// Z 说明：系统控制标签，用于全局控制

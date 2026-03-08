@@ -48,6 +48,8 @@ namespace SIPGameplayTags
 	SIP_API	UE_DECLARE_GAMEPLAY_TAG_EXTERN(InputTag_Walk);
 	SIP_API	UE_DECLARE_GAMEPLAY_TAG_EXTERN(InputTag_Sprint);
 	SIP_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(InputTag_Dash);
+	SIP_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(InputTag_Attack);
+	SIP_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(InputTag_Potion_Heal);
 	SIP_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Cooldown_Dash);
 
 	// 删除注释：InputTag_Look_Stick（暂不支持手柄视角，留作后续扩展）
@@ -56,6 +58,7 @@ namespace SIPGameplayTags
 	// Z 说明：角色状态标签，用于标记当前状态
 	// 使用场景：技能可以检查这些标签来决定是否激活
 	SIP_API	UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Movement_Jumping);
+	SIP_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Dead);
 
 
 	// ==================== System Tags ====================

@@ -16,7 +16,6 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "GameFramework/Controller.h"
-#include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "InputActionValue.h"
 #include "SIPGameplayTags.h"
@@ -24,7 +23,7 @@
 #include "Ability/SIPAbilitySystemComponent.h"
 #include "Ability/SIPAbilitySet.h"
 #include "Input/SIPInputComponent.h"
-#include "GameplayEffect.h"
+#include "Controller/SIPPlayerController.h"
 
 /**
  * Z 说明：构造函数
@@ -39,6 +38,7 @@
 ASIPHeroCharacter::ASIPHeroCharacter(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {
+	
 	// Z 说明：设置胶囊体碰撞体大小
 	// 标准人类角色大小：直径42，高96
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
@@ -127,35 +127,12 @@ void ASIPHeroCharacter::PostInitializeComponents()
 	// Z 说明：调用基类初始化
 	Super::PostInitializeComponents();
 
-	// Z 说明：初始化 AbilitySystemComponent
 	if (AbilitySystemComponent)
 	{
-		// Z 说明：初始化 ASC 的 ActorInfo
-		// 参数：OwnerActor（角色自身）, AvatarActor（可视化的角色）
-		AbilitySystemComponent->InitAbilityActorInfo(this, this);
-		
-		UE_LOG(LogSIPCharacter, Log, TEXT("ASC Initialized. Granting abilities..."));
-
-		// Z 说明：遍历 AbilitySets，授予技能
-		// 每个 AbilitySet 包含一组技能配置
-		FSIPAbilitySet_GrantedHandles GrantedHandles;
-		for(const TObjectPtr<USIPAbilitySet>& Set : AbilitySets)
-		{
-			if (Set)
-			{
-				// Z 说明：授予技能集
-				Set->GiveToAbilitySystem(AbilitySystemComponent, &GrantedHandles);
-			}
-		}
-					
-		// Z 说明：调试输出
-		// 打印已激活的技能信息
-		UE_LOG(LogSIPCharacter, Log, TEXT("Total Activatable Abilities: %d"), AbilitySystemComponent->GetActivatableAbilities().Num());
+		UE_LOG(LogSIPCharacter, Log, TEXT("Hero activatable abilities: %d"), AbilitySystemComponent->GetActivatableAbilities().Num());
 		for (const FGameplayAbilitySpec& Spec : AbilitySystemComponent->GetActivatableAbilities())
 		{
-			UE_LOG(LogSIPCharacter, Log, TEXT("  Ability: %s, DynamicTags: %s"), 
-				*GetNameSafe(Spec.Ability), 
-				*Spec.DynamicAbilityTags.ToString());
+			UE_LOG(LogSIPCharacter, Log, TEXT("  Ability: %s, DynamicTags: %s"), *GetNameSafe(Spec.Ability), *Spec.DynamicAbilityTags.ToString());
 		}
 	}
 }
@@ -259,6 +236,8 @@ void ASIPHeroCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCo
 	// 	UE_LOG(LogSIPCharacter, Error, TEXT("'%s' Failed to find an Enhanced Input component! This template is built to use the Enhanced Input system. If you intend to use the legacy system, then you will need to update this C++ file."), *GetNameSafe(this));
 	// }
 }
+
+
 
 /**
  * Z 说明：Input_Move

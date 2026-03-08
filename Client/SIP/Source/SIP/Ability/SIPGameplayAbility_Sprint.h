@@ -27,6 +27,9 @@ protected:
 	// 检查是否可以激活
 	virtual bool CanActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayTagContainer* SourceTags, const FGameplayTagContainer* TargetTags, FGameplayTagContainer* OptionalRelevantTags) const override;
 
+	// 输入松开时调用，用于结束持续型技能
+	virtual void InputReleased(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo) override;
+
 protected:
 	// 冲刺时应用的GameplayEffect（加速效果）
 	UPROPERTY(EditDefaultsOnly, Category = "Sprint")
