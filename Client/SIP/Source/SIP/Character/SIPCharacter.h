@@ -27,6 +27,11 @@ class UAbilitySystemComponent;
 class USIPAbilitySystemComponent;
 class UAttributeSet;
 class USIPHealthSet;
+class AActor;
+class UMaterialInstanceDynamic;
+class UMeshComponent;
+struct FGameplayAbilitySpec;
+struct FTimerHandle;
 
 /**
  * Z 说明：
@@ -78,6 +83,14 @@ public:
 	// 新增：获取Character的Health属性集
 	USIPHealthSet* GetSIPHealthSet() const;
 
+	float GetCurrentHealth() const;
+	float GetMaxHealth() const;
+	bool IsDeadOrDying() const;
+	bool ApplyCombatDamage(float DamageAmount, AActor* DamageInstigator = nullptr);
+	bool RestoreHealth(float HealAmount);
+	void HandleOutOfHealth();
+	void HandleRevived();
+
 	/**
 	 * Z 说明：角色的技能集列表
 	 * 每个 AbilitySet 包含一组技能、属性、被动效果
@@ -98,18 +111,27 @@ public:
 	 */
 	// 新增：死亡处理回调
 	virtual void OnDeath();
+
+	UFUNCTION(BlueprintImplementableEvent, Category = "SIP|Death", DisplayName = "On Death")
+	void K2_OnDeath();
 	
 	/**
 	 * Z 说明：开始死亡回调
 	 * 在死亡动画开始时调用
 	 */
 	virtual void OnDeathStarted();
+
+	UFUNCTION(BlueprintImplementableEvent, Category = "SIP|Death", DisplayName = "On Death Started")
+	void K2_OnDeathStarted();
 	
 	/**
 	 * Z 说明：死亡结束（复活）回调
 	 * 在死亡动画结束或角色复活时调用
 	 */
 	virtual void OnDeathStopped();
+
+	UFUNCTION(BlueprintImplementableEvent, Category = "SIP|Death", DisplayName = "On Death Stopped")
+	void K2_OnDeathStopped();
 
 protected:
 
@@ -130,6 +152,9 @@ protected:
 	 */
 	// 在这里初始化组件
 	virtual void PostInitializeComponents() override;
+	void StartDeathDissolve();
+	void UpdateDeathDissolve();
+	void FinishDeathDissolve();
 	
 protected:
 	/**
@@ -144,4 +169,40 @@ protected:
 	/** Ability System */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "GAS")
 	TObjectPtr<USIPAbilitySystemComponent> AbilitySystemComponent;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "SIP|Health", meta = (AllowPrivateAccess = "true", ClampMin = "1.0"))
+	float DefaultMaxHealth = 100.0f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "SIP|Health", meta = (AllowPrivateAccess = "true", ClampMin = "0.0"))
+	float DefaultStartingHealth = 100.0f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "SIP|Death|Dissolve", meta = (AllowPrivateAccess = "true"))
+	bool bUseDeathDissolve = true;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "SIP|Death|Dissolve", meta = (AllowPrivateAccess = "true", ClampMin = "0.05"))
+	float DeathDissolveDuration = 1.5f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "SIP|Death|Dissolve", meta = (AllowPrivateAccess = "true"))
+	FName DeathDissolveParameterName = TEXT("DissolveAmount");
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "SIP|Death|Dissolve", meta = (AllowPrivateAccess = "true"))
+	float DeathDissolveStartValue = 0.0f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "SIP|Death|Dissolve", meta = (AllowPrivateAccess = "true"))
+	float DeathDissolveEndValue = 1.0f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "SIP|Death|Dissolve", meta = (AllowPrivateAccess = "true"))
+	bool bDestroyActorOnDissolveComplete = false;
+
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category = "SIP|State", meta = (AllowPrivateAccess = "true"))
+	bool bIsDead = false;
+
+	UPROPERTY(Transient)
+	TArray<TObjectPtr<UMaterialInstanceDynamic>> DeathDissolveMaterials;
+
+	UPROPERTY(Transient)
+	TArray<TObjectPtr<UMeshComponent>> DeathDissolveMeshComponents;
+
+	float DeathDissolveElapsedTime = 0.0f;
+	FTimerHandle DeathDissolveTimerHandle;
 };

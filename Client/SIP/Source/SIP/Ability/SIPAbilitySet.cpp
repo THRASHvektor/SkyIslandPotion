@@ -65,6 +65,16 @@ void FSIPAbilitySet_GrantedHandles::AddAttributeSet(UAttributeSet* AttributeSet)
 void FSIPAbilitySet_GrantedHandles::TakeFromAbilitySystem(UAbilitySystemComponent* ASC)
 {
 	check(ASC);
+
+	for (const FActiveGameplayEffectHandle& Handle : GameplayEffectHandles)
+	{
+		if (Handle.IsValid())
+		{
+			ASC->RemoveActiveGameplayEffect(Handle);
+		}
+	}
+
+	GameplayEffectHandles.Reset();
     
 	for (const FGameplayAbilitySpecHandle& Handle : AbilitySpecHandles)
 	{

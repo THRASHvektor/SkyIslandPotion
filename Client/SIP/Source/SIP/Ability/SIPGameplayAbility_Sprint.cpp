@@ -54,6 +54,11 @@ void USIPGameplayAbility_Sprint::ActivateAbility(const FGameplayAbilitySpecHandl
 	}
 }
 
+void USIPGameplayAbility_Sprint::InputReleased(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo)
+{
+	EndAbility(Handle, ActorInfo, ActivationInfo, true, false);
+}
+
 void USIPGameplayAbility_Sprint::EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled)
 {
 	// 移除冲刺效果
