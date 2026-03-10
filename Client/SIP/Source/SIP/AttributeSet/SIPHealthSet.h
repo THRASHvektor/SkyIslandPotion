@@ -64,7 +64,6 @@ public:
 	GAMEPLAYATTRIBUTE_PROPERTY_GETTER(USIPHealthSet, Health);
 	GAMEPLAYATTRIBUTE_PROPERTY_GETTER(USIPHealthSet, MaxHealth);
 	GAMEPLAYATTRIBUTE_PROPERTY_GETTER(USIPHealthSet, Healing);
-	GAMEPLAYATTRIBUTE_PROPERTY_GETTER(USIPHealthSet, MoveSpeed);
 
 	// Z 说明：当前生命值（主属性）
 	// Primary Attribute
@@ -82,13 +81,6 @@ public:
 	// Clamped between 0 and MaxHealth
 	UPROPERTY(BlueprintReadOnly, Category = "SIP|Health", ReplicatedUsing = OnRep_Healing)
 	FGameplayAttributeData Healing;
-
-	// Z 说明：移动速度（次级属性）
-	// 影响：角色的最大行走/奔跑速度
-	// 应用：通过 GE 修改此属性来实现加速/减速效果
-	// Secondary Attribute
-	UPROPERTY(BlueprintReadOnly, Category = "SIP|Health", ReplicatedUsing = OnRep_MoveSpeed)
-	FGameplayAttributeData MoveSpeed;
 
 	// Z 说明：属性变化时的标签缓存
 	// 用于在 GE 回调中识别是哪个属性发生了变化
@@ -156,7 +148,4 @@ protected:
 
 	UFUNCTION()
 	virtual void OnRep_Healing(const FGameplayAttributeData& OldHealing);
-
-	UFUNCTION()
-	virtual void OnRep_MoveSpeed(const FGameplayAttributeData& OldMoveSpeed);
 };

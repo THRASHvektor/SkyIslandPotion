@@ -6,8 +6,6 @@
 #include "Character/SIPCharacter.h"
 #include "SIPLogCategory.h"
 #include "Net/UnrealNetwork.h"
-#include "GameFramework/Character.h"
-#include "GameFramework/CharacterMovementComponent.h"
 
 // 本文件：USIPHealthSet 实现
 // 目的：管理角色的 Health、MaxHealth、Healing、MoveSpeed 等属性
@@ -18,7 +16,6 @@ USIPHealthSet::USIPHealthSet()
 	: Health(100.0f)
 	, MaxHealth(100.0f)
 	, Healing(0.0f)
-	, MoveSpeed(600.0f)
 {
 	// 初始化并缓存常用的 GameplayTag（用于在 GameplayEffects / Ability 中标识属性变化）
 	Tag_MaxHealthChanged = FGameplayTag::RequestGameplayTag(FName("Health.MaxChanged"));
@@ -53,7 +50,6 @@ void USIPHealthSet::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLif
 	DOREPLIFETIME_CONDITION_NOTIFY(USIPHealthSet, Health, COND_None, REPNOTIFY_Always);
 	DOREPLIFETIME_CONDITION_NOTIFY(USIPHealthSet, MaxHealth, COND_None, REPNOTIFY_Always);
 	DOREPLIFETIME_CONDITION_NOTIFY(USIPHealthSet, Healing, COND_None, REPNOTIFY_Always);
-	DOREPLIFETIME_CONDITION_NOTIFY(USIPHealthSet, MoveSpeed, COND_None, REPNOTIFY_Always);
 }
 
 // 在属性基础值被改变前拦截（Base value change），用于对即将设置的基础值进行裁剪/限制
@@ -120,43 +116,19 @@ void USIPHealthSet::PostAttributeChange(const FGameplayAttribute& Attribute, flo
 			}
 		}
 	}
-
-	// MoveSpeed 变化的处理：同步到角色的 CharacterMovement->MaxWalkSpeed
-	if (Attribute == GetMoveSpeedAttribute())
-	{
-		UE_LOG(LogSIP, Log, TEXT("MoveSpeed changed: %f -> %f"), OldValue, NewValue);
-
-		// AttributeSet 是用 NewObject<>(ASC->GetOwner(), ...) 创建的，Outer 就是 Character，直接 Cast 最可靠
-		if (ACharacter* Character = Cast<ACharacter>(GetOuter()))
-		{
-			if (UCharacterMovementComponent* MoveComp = Character->GetCharacterMovement())
-			{
-				MoveComp->MaxWalkSpeed = NewValue;
-				UE_LOG(LogSIP, Log, TEXT("MaxWalkSpeed synced to %f"), NewValue);
-			}
-		}
-	}
 }
 
 
 
 void USIPHealthSet::ClampAttribute(const FGameplayAttribute& Attribute, float& NewValue) const
 {
-	// 将各属性的有效区间/下界进行约束，避免出现非法值
 	if (Attribute == GetHealthAttribute())
 	{
-		// Health 的上限依赖当前 MaxHealth（使用 GetNumericValue 读取当前 MaxHealth）
 		NewValue = FMath::Clamp(NewValue, 0.0f, GetMaxHealthAttribute().GetNumericValue(this));
 	}
 	else if (Attribute == GetMaxHealthAttribute())
 	{
-		// MaxHealth 最低为 1，避免除以 0 或逻辑错误
 		NewValue = FMath::Max(NewValue, 1.0f);
-	}
-	else if (Attribute == GetMoveSpeedAttribute())
-	{
-		// 移动速度不能为负
-		NewValue = FMath::Max(NewValue, 0.0f);
 	}
 }
 
@@ -174,24 +146,4 @@ void USIPHealthSet::OnRep_MaxHealth(const FGameplayAttributeData& OldMaxHealth)
 void USIPHealthSet::OnRep_Healing(const FGameplayAttributeData& OldHealing)
 {
 	GAMEPLAYATTRIBUTE_REPNOTIFY(USIPHealthSet, Healing, OldHealing);
-}
-
-void USIPHealthSet::OnRep_MoveSpeed(const FGameplayAttributeData& OldMoveSpeed)
-{
-	GAMEPLAYATTRIBUTE_REPNOTIFY(USIPHealthSet, MoveSpeed, OldMoveSpeed);
-
-	// 当属性复制到客户端时，也需要将 MoveSpeed 同步到本地的 CharacterMovement
-	UAbilitySystemComponent* ASC = GetOwningAbilitySystemComponent();
-	if (ASC)
-	{
-		AActor* Avatar = ASC->GetAvatarActor();
-		if (ACharacter* Character = Cast<ACharacter>(Avatar))
-		{
-			if (UCharacterMovementComponent* MoveComp = Character->GetCharacterMovement())
-			{
-				MoveComp->MaxWalkSpeed = MoveSpeed.GetCurrentValue();
-				UE_LOG(LogSIP, Verbose, TEXT("OnRep_MoveSpeed synced MaxWalkSpeed to %f"), MoveSpeed.GetCurrentValue());
-			}
-		}
-	}
 }

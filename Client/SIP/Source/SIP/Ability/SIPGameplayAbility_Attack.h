@@ -1,14 +1,14 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Abilities/GameplayAbility.h"
+#include "SIPGameplayAbility.h"
 #include "SIPGameplayAbility_Attack.generated.h"
 
 class ASIPCharacter;
 class UAnimMontage;
 
 UCLASS()
-class SIP_API USIPGameplayAbility_Attack : public UGameplayAbility
+class SIP_API USIPGameplayAbility_Attack : public USIPGameplayAbility
 {
 	GENERATED_BODY()
 

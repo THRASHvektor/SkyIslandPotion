@@ -91,4 +91,38 @@ namespace SIPGameplayTags
 	SIP_API	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Vitality_Healing);    // 治疗中
 	SIP_API	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Vitality_Burning);    // 燃烧debuff
 	SIP_API	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Vitality_SpeedBoost); // 加速buff
+
+	// ==================== Element Tags ====================
+	// 元素标签：药水携带的元素类型 + 世界 ZoneActor 的自身元素
+	// 反应计算：Zone.ElementTag + Projectile.ElementTag → ReactionTag
+	SIP_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Element_Fire);     // 火元素（火焰草系药水）
+	SIP_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Element_Ice);      // 冰元素（冰霜藤系药水）
+	SIP_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Element_Thunder);  // 雷元素（雷晶矿系药水）
+	SIP_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Element_Wind);     // 风元素（风羽草系药水）
+	SIP_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Element_Plant);    // 植物元素（森林区域/植物类药水）
+	SIP_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Element_Heal);     // 水/治愈元素（月光花系药水，兼水属性）
+
+	// ==================== Biome Tags ====================
+	// 生物群落标签：用于 PCG 岛屿生成时区分岛屿类型
+	// 由 SIPIslandGeneratorComponent 使用，不参与反应计算
+	SIP_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Biome_Fire);       // 火山岛
+	SIP_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Biome_Ice);        // 冰原岛
+	SIP_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Biome_Forest);     // 森林岛
+	SIP_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Biome_Plains);     // 平原岛
+
+	// ==================== Reaction Tags ====================
+	// 反应结果标签：由 SIPElementReactionSubsystem 计算输出
+	// ZoneActor 根据此标签决定 PCG 清理/网格替换/VFX 播放方案
+	SIP_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Reaction_Burn);      // 燃烧：Plant+Fire  → 植被移除，道路开启
+	SIP_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Reaction_Melt);      // 熔化：Ice+Fire    → 冰结构坍塌，隐藏区域显现
+	SIP_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Reaction_Freeze);    // 冻结：Heal+Ice    → 水面冰封，形成可行走平台
+	SIP_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Reaction_Electrify); // 感电：Heal+Thunder→ 水域区域敌人全体眩晕
+	SIP_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Reaction_Bloom);     // 绽放：Plant+Wind  → 孢子扩散，资源点新生
+
+	// ==================== Zone State Tags ====================
+	// 区域状态标签：ZoneActor 发生反应后持有此 Tag，防止重复触发
+	SIP_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Zone_Burning);       // 燃烧状态
+	SIP_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Zone_Frozen);        // 冻结状态
+	SIP_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Zone_Electrified);   // 感电状态
+	SIP_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Zone_Bloomed);       // 绽放状态
 };
