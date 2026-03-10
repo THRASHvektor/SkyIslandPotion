@@ -1,5 +1,6 @@
 #include "SIPAbilitySystemComponent.h"
 #include "SIPGameplayTags.h"
+#include "SIPGameplayAbility.h"
 
 /**
  * Z 说明：
@@ -34,19 +35,19 @@ void USIPAbilitySystemComponent::ProcessAbilityInput(float DeltaTime, bool bGame
 	AbilitiesToActivate.Reset();
 
 	// Z 说明：第一步 - 处理按住状态的技能
-    // 遍历所有正在按住的输入，尝试激活"持续激活"类型的 Ability
+    // 只有 ActivationPolicy == WhileInputActive 的技能才会在持续按住时重复激活
+    // OnInputTriggered 的技能（Attack/Dash等）不走此分支，避免每帧重复尝试激活
 	for (const FGameplayAbilitySpecHandle& SpecHandle : InputHeldSpecHandles)
 	{
 		if (const FGameplayAbilitySpec* AbilitySpec = FindAbilitySpecFromHandle(SpecHandle))
 		{
 			if (AbilitySpec->Ability && !AbilitySpec->IsActive())
 			{
-                // Z 注意：当前实现是只要按住就尝试激活
-                // Lyra 的做法是通过 ActivationPolicy 来区分：
-                // - WhileInputActive: 按住时持续激活
-                // - OnInputTriggered: 按下时激活一次
-                // 这里预留了扩展接口
-				AbilitiesToActivate.AddUnique(AbilitySpec->Handle);
+				const USIPGameplayAbility* SIPAbility = Cast<USIPGameplayAbility>(AbilitySpec->Ability);
+				if (SIPAbility && SIPAbility->ActivationPolicy == ESIPAbilityActivationPolicy::WhileInputActive)
+				{
+					AbilitiesToActivate.AddUnique(AbilitySpec->Handle);
+				}
 			}
 		}
 	}

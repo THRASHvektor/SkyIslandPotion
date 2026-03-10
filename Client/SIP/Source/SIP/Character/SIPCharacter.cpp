@@ -35,6 +35,15 @@ void ASIPCharacter::BeginPlay()
 	Super::BeginPlay();
 }
 
+void ASIPCharacter::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	if (AbilitySystemComponent)
+	{
+		AbilitySetHandles.TakeFromAbilitySystem(AbilitySystemComponent);
+	}
+	Super::EndPlay(EndPlayReason);
+}
+
 void ASIPCharacter::PostInitializeComponents()
 {
 	Super::PostInitializeComponents();
@@ -45,12 +54,11 @@ void ASIPCharacter::PostInitializeComponents()
 
 		UE_LOG(LogSIPCharacter, Log, TEXT("%s ASC initialized. Granting abilities..."), *GetName());
 
-		FSIPAbilitySet_GrantedHandles GrantedHandles;
 		for (const TObjectPtr<USIPAbilitySet>& Set : AbilitySets)
 		{
 			if (Set)
 			{
-				Set->GiveToAbilitySystem(AbilitySystemComponent, &GrantedHandles, this);
+				Set->GiveToAbilitySystem(AbilitySystemComponent, &AbilitySetHandles, this);
 			}
 		}
 

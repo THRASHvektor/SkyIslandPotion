@@ -1,7 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Abilities/GameplayAbility.h"
+#include "SIPGameplayAbility.h"
 #include "SIPGameplayAbility_Sprint.generated.h"
 
 /**
@@ -10,7 +10,7 @@
  * 冲刺技能：按下时应用加速效果，松开时移除
  */
 UCLASS()
-class SIP_API USIPGameplayAbility_Sprint : public UGameplayAbility
+class SIP_API USIPGameplayAbility_Sprint : public USIPGameplayAbility
 {
 	GENERATED_BODY()
 

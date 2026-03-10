@@ -9,6 +9,9 @@ USIPGameplayAbility_Sprint::USIPGameplayAbility_Sprint(const FObjectInitializer&
 	// 设置为实例化模式，每个执行创建新实例
 	InstancingPolicy = EGameplayAbilityInstancingPolicy::InstancedPerExecution;
 	
+	// 冲刺是持续型技能，按住期间保持激活
+	ActivationPolicy = ESIPAbilityActivationPolicy::WhileInputActive;
+	
 	// 默认标签 - 使用InputTag.Sprint与输入配置匹配
 	AbilityTags.AddTag(FGameplayTag::RequestGameplayTag(FName("InputTag.Sprint")));
 	

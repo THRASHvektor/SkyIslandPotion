@@ -2,22 +2,11 @@
 /**
  * Z 说明：
  * USIPGameplayAbility_Dash 是闪现技能的实现
- * 继承自 UGameplayAbility
- * 
- * 技能特点：
- * 1. 快速位移技能，类似闪现
- * 2. 支持碰撞检测，防止穿墙
- * 3. 带有冷却时间（通过 GameplayEffect 实现）
- * 4. 支持 Niagara 视觉效果
- * 
- * 使用方式：
- * 1. 在 Blueprint 中配置 DashDistance（位移距离）
- * 2. 配置 DashCooldownEffect（冷却效果）
- * 3. 配置 DashTrailEffect/DashLandedEffect（视觉特效）
+ * 继承自 USIPGameplayAbility
  */
 
 #include "CoreMinimal.h"
-#include "Abilities/GameplayAbility.h"
+#include "SIPGameplayAbility.h"
 #include "SIPGameplayAbility_Dash.generated.h"
 
 class UGameplayEffect;
@@ -35,7 +24,7 @@ class USceneComponent;
  * 4. 播放视觉特效
  */
 UCLASS()
-class SIP_API USIPGameplayAbility_Dash : public UGameplayAbility
+class SIP_API USIPGameplayAbility_Dash : public USIPGameplayAbility
 {
 	GENERATED_BODY()
 

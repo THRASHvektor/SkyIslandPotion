@@ -71,6 +71,33 @@ namespace SIPGameplayTags
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Vitality_Burning, "Vitality.Burning", "Burning damage over time.");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Vitality_SpeedBoost, "Vitality.SpeedBoost", "Movement speed boost.");
 
+	// ==================== Element Tags ====================
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Element_Fire,    "Element.Fire",    "Fire element - carried by fire potions and volcanic zones.");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Element_Ice,     "Element.Ice",     "Ice element - carried by ice potions and frozen zones.");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Element_Thunder, "Element.Thunder", "Thunder element - carried by thunder potions.");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Element_Wind,    "Element.Wind",    "Wind element - carried by wind potions.");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Element_Plant,   "Element.Plant",   "Plant element - forest zones and nature potions.");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Element_Heal,    "Element.Heal",    "Heal/Water element - healing potions, acts as water in reactions.");
+
+	// ==================== Biome Tags ====================
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Biome_Fire,   "Biome.Fire",   "Volcanic island biome - used by PCG island generator.");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Biome_Ice,    "Biome.Ice",    "Frozen island biome - used by PCG island generator.");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Biome_Forest, "Biome.Forest", "Forest island biome - used by PCG island generator.");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Biome_Plains, "Biome.Plains", "Plains island biome - used by PCG island generator.");
+
+	// ==================== Reaction Tags ====================
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Reaction_Burn,      "Reaction.Burn",      "Plant+Fire:  vegetation removed, path revealed.");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Reaction_Melt,      "Reaction.Melt",      "Ice+Fire:    ice structures melt, hidden area exposed.");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Reaction_Freeze,    "Reaction.Freeze",    "Heal+Ice:    water surface freezes into walkable platform.");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Reaction_Electrify, "Reaction.Electrify", "Heal+Thunder: wet area electrified, enemies stunned.");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Reaction_Bloom,     "Reaction.Bloom",     "Plant+Wind:  spores spread, new resource nodes appear.");
+
+	// ==================== Zone State Tags ====================
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Zone_Burning,     "Zone.Burning",     "Zone has been burned - vegetation cleared.");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Zone_Frozen,      "Zone.Frozen",      "Zone has been frozen - ice platform active.");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Zone_Electrified, "Zone.Electrified", "Zone is electrified - enemies in area are stunned.");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Zone_Bloomed,     "Zone.Bloomed",     "Zone has bloomed - new resources spawned.");
+
 	// ==================== Tag Lookup Function ====================
 	// Z 说明：运行时根据字符串查找标签
 	// 一般不使用，仅作备用（通过字符串动态获取标签）

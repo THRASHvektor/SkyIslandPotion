@@ -23,7 +23,8 @@ public class SIP : ModuleRules
                                                             "GameplayTasks",
                                                             "EnhancedInput",
                                                             "NiagaraCore",
-                                                            "Niagara" });
+                                                            "Niagara",
+                                                            "PCG" });
 
 
 	}

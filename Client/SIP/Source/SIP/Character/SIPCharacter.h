@@ -20,9 +20,9 @@
 #include "GameFramework/Character.h"
 #include "Logging/LogMacros.h"
 #include "AbilitySystemInterface.h"
+#include "Ability/SIPAbilitySet.h"
 #include "SIPCharacter.generated.h"
 
-class USIPAbilitySet;
 class UAbilitySystemComponent;
 class USIPAbilitySystemComponent;
 class UAttributeSet;
@@ -152,6 +152,9 @@ protected:
 	 */
 	// 在这里初始化组件
 	virtual void PostInitializeComponents() override;
+
+	// Actor 销毁时清理授予的技能/属性/效果
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	void StartDeathDissolve();
 	void UpdateDeathDissolve();
 	void FinishDeathDissolve();
@@ -169,6 +172,9 @@ protected:
 	/** Ability System */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "GAS")
 	TObjectPtr<USIPAbilitySystemComponent> AbilitySystemComponent;
+
+	// 记录通过 AbilitySets 授予的所有句柄，用于 EndPlay 时清理
+	FSIPAbilitySet_GrantedHandles AbilitySetHandles;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "SIP|Health", meta = (AllowPrivateAccess = "true", ClampMin = "1.0"))
 	float DefaultMaxHealth = 100.0f;
