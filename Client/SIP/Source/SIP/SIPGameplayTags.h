@@ -50,7 +50,7 @@ namespace SIPGameplayTags
 	SIP_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(InputTag_Dash);
 	SIP_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(InputTag_Attack);
 	SIP_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(InputTag_Potion_Heal);
-	SIP_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Cooldown_Dash);
+	SIP_API	UE_DECLARE_GAMEPLAY_TAG_EXTERN(InputTag_Interact);
 
 	// 删除注释：InputTag_Look_Stick（暂不支持手柄视角，留作后续扩展）
 
@@ -125,4 +125,10 @@ namespace SIPGameplayTags
 	SIP_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Zone_Frozen);        // 冻结状态
 	SIP_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Zone_Electrified);   // 感电状态
 	SIP_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Zone_Bloomed);       // 绽放状态
+
+	// ==================== Cooldown Tags ====================
+	// Z 说明：冷却时间标签
+	// 用途：标识技能的冷却状态
+	// 使用场景：加到对应的cooldown GE里，GA会自动检查这个标签来判断技能是否在冷却中
+	SIP_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Cooldown_Dash);
 };
