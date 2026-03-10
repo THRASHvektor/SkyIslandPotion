@@ -24,6 +24,7 @@
 #include "Ability/SIPAbilitySet.h"
 #include "Input/SIPInputComponent.h"
 #include "Controller/SIPPlayerController.h"
+#include "./Components/InteractionComponent.h"
 
 /**
  * Z 说明：构造函数
@@ -105,6 +106,9 @@ ASIPHeroCharacter::ASIPHeroCharacter(const FObjectInitializer& ObjectInitializer
 	// Z 说明：不使用控制器旋转
 	// 摄像机不独立旋转，只跟随臂移动
 	FollowCamera->bUsePawnControlRotation = false;
+
+	// Z 说明：创建交互组件
+	InteractionComponent = CreateDefaultSubobject<UInteractionComponent>(TEXT("InteractionComponent"));
 }
 
 /**

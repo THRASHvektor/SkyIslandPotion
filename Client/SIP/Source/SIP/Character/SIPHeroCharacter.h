@@ -25,6 +25,7 @@
 
 class USpringArmComponent;
 class UCameraComponent;
+class UInteractionComponent;
 class UInputMappingContext;
 class UGameplayEffect;
 struct FInputActionValue;
@@ -84,6 +85,13 @@ public:
 	 */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	UCameraComponent* FollowCamera;
+
+	/**
+	 * Z 说明：交互组件
+	 * 用于处理与可交互对象的交互逻辑
+	 */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "SIP|Interaction", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UInteractionComponent> InteractionComponent;
 
 	/**
 	 * Z 说明：输入映射上下文
