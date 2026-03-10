@@ -30,8 +30,9 @@ void ACollectableItem::Destroyed()
 
 void ACollectableItem::Interact(UAbilitySystemComponent* InteractorASC)
 {
-    GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Cyan, FString::Printf(TEXT("Interacted with %s"), *GetName()));
-    Destroy();
+    IInteractable::Interact(InteractorASC);
+    // GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Cyan, FString::Printf(TEXT("Interacted with %s"), *GetName()));
+    // Destroy();
 }
 
 FText ACollectableItem::GetInteractText() const
