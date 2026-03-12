@@ -14,15 +14,23 @@ public class SIP : ModuleRules
             }
         );
 
-        PublicDependencyModuleNames.AddRange(new string[] { "Core", 
-                                                            "CoreUObject", 
-                                                            "Engine",
-                                                            "GameplayTags",
-                                                            "InputCore", 
-                                                            "GameplayAbilities",
-                                                            "GameplayTasks",
-                                                            "EnhancedInput",
-                                                            "AIModule"
+        PublicDependencyModuleNames.AddRange(new string[] { 
+            "Core", 
+            "CoreUObject", 
+            "Engine",
+            "UMG",
+            "GameplayTags",
+            "InputCore", 
+            "GameplayAbilities",
+            "GameplayTasks",
+            "EnhancedInput",
+            "NiagaraCore",
+            "Niagara",
+                                                            "PCG" });
+        
+        PrivateDependencyModuleNames.AddRange(new string[] {
+            "Slate",
+            "SlateCore",
         });
 
 
