@@ -21,7 +21,9 @@ public class SIP : ModuleRules
                                                             "InputCore", 
                                                             "GameplayAbilities",
                                                             "GameplayTasks",
-                                                            "EnhancedInput" });
+                                                            "EnhancedInput",
+                                                            "AIModule"
+        });
 
 
 	}
