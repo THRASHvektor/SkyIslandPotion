@@ -20,13 +20,16 @@
 
 namespace SIPGameplayTags
 {
-	// ==================== Input Tags ====================
+	// ==================== 输入标签 ====================
 	// Z 说明：输入相关标签，用于绑定输入事件到 Ability
 	// 这些标签与 InputConfig 配合，实现输入到技能的映射
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(InputTag_Move, "InputTag.Move", "Move input.");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(InputTag_Look_Mouse, "InputTag.Look.Mouse", "Look (mouse) input.");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(InputTag_Jump, "InputTag.Jump", "Jump input.");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(InputTag_Sprint, "InputTag.Sprint", "Sprint input.");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(InputTag_Aim, "InputTag.Aim", "Aim input.");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(InputTag_Strafe, "InputTag.Strafe", "Strafe input.");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(InputTag_Crouch, "InputTag.Crouch", "Crouch input.");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(InputTag_Dash, "InputTag.Dash", "Dash input.");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(InputTag_Attack, "InputTag.Attack", "Attack input.");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(InputTag_Potion_Heal, "InputTag.Potion.Heal", "Healing potion input.");
@@ -35,18 +38,33 @@ namespace SIPGameplayTags
 
 	// InputTag_Look_Stick 的定义（原因：暂不支持手柄视角控制，后续需要时可重新添加）
 
-	// ==================== State Tags ====================
+	// ==================== 状态标签 ====================
 	// Z 说明：角色状态标签，用于标记当前状态
 	// 使用场景：技能可以检查这些标签来决定是否激活或改变行为
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(State_Combat, "State.Combat", "Character is in combat presentation state.");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(State_Combat_Attacking, "State.Combat.Attacking", "Character is playing an attack action.");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(State_Combat_Throwing, "State.Combat.Throwing", "Character is playing a throw action.");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(State_Combat_Attack_HitWindow, "State.Combat.Attack.HitWindow", "Attack hit window is currently open.");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(State_Movement_Jumping, "State.Movement.Jumping", "Jumping state.");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(State_Movement_Aiming, "State.Movement.Aiming", "Character is currently aiming.");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(State_Movement_Strafing, "State.Movement.Strafing", "Character is currently strafing.");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(State_Movement_Crouching, "State.Movement.Crouching", "Character is currently crouching.");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(State_Movement_Traversing, "State.Movement.Traversing", "Character is performing a traversal action.");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(State_Dead, "State.Dead", "Character is dead.");
 
-	// ==================== System Tags ====================
+	// ==================== 动画事件标签 ====================
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Event_Animation_Attack_Request, "Event.Animation.Attack.Request", "Animation request for an attack action.");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Event_Animation_Attack_HitWindow_Start, "Event.Animation.Attack.HitWindow.Start", "Animation opened the attack hit window.");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Event_Animation_Attack_HitWindow_End, "Event.Animation.Attack.HitWindow.End", "Animation closed the attack hit window.");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Event_Animation_Throw_Request, "Event.Animation.Throw.Request", "Animation request for a throw action.");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Event_Animation_Throw_Release, "Event.Animation.Throw.Release", "Animation reached the projectile release frame.");
+
+	// ==================== 系统标签 ====================
 	// Z 说明：系统控制标签，用于全局控制
 	// 用途：通过 GE 可以禁止玩家输入，常用于被控制/眩晕等状态
 	UE_DEFINE_GAMEPLAY_TAG(TAG_Gameplay_AbilityInputBlocked, "Gameplay.AbilityInputBlocked");
 
-	// ==================== Health Tags ====================
+	// ==================== 生命值标签 ====================
 	// Z 说明：生命值系统标签
 	// 用途：GAS 中属性变化需要通过标签进行追踪和广播，便于 UI 和其他系统响应
 	// 使用场景：
@@ -60,7 +78,7 @@ namespace SIPGameplayTags
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(DeathStarted, "Death.Started", "Death has started.");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(DeathStopped, "Death.Stopped", "Death has stopped (revive).");
 
-	// ==================== Vitality Tags ====================
+	// ==================== 生命力标签 ====================
 	// Z 说明：生命力/增益效果标签
 	// 用途：GE 通过标签来标识效果类型，便于技能系统分类管理
 	// 使用场景：
@@ -71,7 +89,7 @@ namespace SIPGameplayTags
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Vitality_Burning, "Vitality.Burning", "Burning damage over time.");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Vitality_SpeedBoost, "Vitality.SpeedBoost", "Movement speed boost.");
 
-	// ==================== Element Tags ====================
+	// ==================== 元素标签 ====================
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Element_Fire,    "Element.Fire",    "Fire element - carried by fire potions and volcanic zones.");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Element_Ice,     "Element.Ice",     "Ice element - carried by ice potions and frozen zones.");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Element_Thunder, "Element.Thunder", "Thunder element - carried by thunder potions.");
@@ -79,32 +97,32 @@ namespace SIPGameplayTags
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Element_Plant,   "Element.Plant",   "Plant element - forest zones and nature potions.");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Element_Heal,    "Element.Heal",    "Heal/Water element - healing potions, acts as water in reactions.");
 
-	// ==================== Biome Tags ====================
+	// ==================== 群落标签 ====================
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Biome_Fire,   "Biome.Fire",   "Volcanic island biome - used by PCG island generator.");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Biome_Ice,    "Biome.Ice",    "Frozen island biome - used by PCG island generator.");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Biome_Forest, "Biome.Forest", "Forest island biome - used by PCG island generator.");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Biome_Plains, "Biome.Plains", "Plains island biome - used by PCG island generator.");
 
-	// ==================== Reaction Tags ====================
+	// ==================== 反应标签 ====================
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Reaction_Burn,      "Reaction.Burn",      "Plant+Fire:  vegetation removed, path revealed.");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Reaction_Melt,      "Reaction.Melt",      "Ice+Fire:    ice structures melt, hidden area exposed.");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Reaction_Freeze,    "Reaction.Freeze",    "Heal+Ice:    water surface freezes into walkable platform.");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Reaction_Electrify, "Reaction.Electrify", "Heal+Thunder: wet area electrified, enemies stunned.");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Reaction_Bloom,     "Reaction.Bloom",     "Plant+Wind:  spores spread, new resource nodes appear.");
 
-	// ==================== Zone State Tags ====================
+	// ==================== 区域状态标签 ====================
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Zone_Burning,     "Zone.Burning",     "Zone has been burned - vegetation cleared.");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Zone_Frozen,      "Zone.Frozen",      "Zone has been frozen - ice platform active.");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Zone_Electrified, "Zone.Electrified", "Zone is electrified - enemies in area are stunned.");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Zone_Bloomed,     "Zone.Bloomed",     "Zone has bloomed - new resources spawned.");
 
-	// ==================== Cooldown Tags ====================
+	// ==================== 冷却标签 ====================
 	// Z 说明：冷却时间标签
 	// 用途：标识技能的冷却状态
 	// 使用场景：加到对应的cooldown GE里，GA会自动检查这个标签来判断技能是否在冷却中
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Cooldown_Dash, "Cooldown.Dash", "Dash cooldown.");
 
-	// ==================== Tag Lookup Function ====================
+	// ==================== 标签查找函数 ====================
 	// Z 说明：运行时根据字符串查找标签
 	// 一般不使用，仅作备用（通过字符串动态获取标签）
 	FGameplayTag FindTagByString(const FString& TagString, bool bMatchPartialString)

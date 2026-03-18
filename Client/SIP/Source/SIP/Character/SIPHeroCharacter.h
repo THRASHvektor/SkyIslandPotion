@@ -19,17 +19,54 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "GameFramework/CharacterMovementComponent.h"
 #include "SIPCharacter.h"
+#include "Character/Components/SIPSandboxLocomotionComponent.h"
 #include "Input/SIPInputConfig.h"
 #include "SIPHeroCharacter.generated.h"
 
 class USpringArmComponent;
 class UCameraComponent;
 class UInteractionComponent;
+class UMotionWarpingComponent;
+class USIPHeroAnimationBridgeComponent;
+class UAnimInstance;
 class UInputMappingContext;
 class UGameplayEffect;
+class USkeletalMesh;
 struct FInputActionValue;
 struct FActiveGameplayEffectHandle;
+struct FHitResult;
+
+UENUM(BlueprintType)
+enum class ESIPHeroAnimationPrototypePreset : uint8
+{
+	None UMETA(DisplayName = "None"),
+	MannyLocomotion UMETA(DisplayName = "Manny Locomotion"),
+	CombatMagicUnarmed UMETA(DisplayName = "CombatMagic Unarmed")
+};
+
+UENUM(BlueprintType)
+enum class ESIPSandboxMovementState : uint8
+{
+	Grounded UMETA(DisplayName = "Grounded"),
+	InAir UMETA(DisplayName = "In Air"),
+	Traversal UMETA(DisplayName = "Traversal")
+};
+
+UENUM(BlueprintType)
+enum class ESIPSandboxRotationMode : uint8
+{
+	OrientToMovement UMETA(DisplayName = "Orient To Movement"),
+	ControllerDesired UMETA(DisplayName = "Controller Desired")
+};
+
+UENUM(BlueprintType)
+enum class ESIPSandboxStance : uint8
+{
+	Standing UMETA(DisplayName = "Standing"),
+	Crouching UMETA(DisplayName = "Crouching")
+};
 
 
 /**
@@ -93,6 +130,121 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "SIP|Interaction", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UInteractionComponent> InteractionComponent;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "SIP|Sandbox", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UMotionWarpingComponent> MotionWarping;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "SIP|Animation", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<USIPHeroAnimationBridgeComponent> HeroAnimationBridgeComponent;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "SIP|Sandbox", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<USIPSandboxLocomotionComponent> SandboxLocomotionComponent;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "SIP|Sandbox|ThreadSafe", meta = (AllowPrivateAccess = "true"))
+	bool SandboxWantsToWalk = false;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "SIP|Sandbox|ThreadSafe", meta = (AllowPrivateAccess = "true"))
+	bool SandboxWantsToSprint = false;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "SIP|Sandbox|ThreadSafe", meta = (AllowPrivateAccess = "true"))
+	bool SandboxWantsToAim = false;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "SIP|Sandbox|ThreadSafe", meta = (AllowPrivateAccess = "true"))
+	bool SandboxWantsToStrafe = false;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "SIP|Sandbox|ThreadSafe", meta = (AllowPrivateAccess = "true"))
+	bool SandboxTraversalActive = false;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "SIP|Sandbox|ThreadSafe", meta = (AllowPrivateAccess = "true"))
+	bool SandboxUseControllerDesiredRotation = false;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "SIP|Sandbox|ThreadSafe", meta = (AllowPrivateAccess = "true"))
+	ESIPSandboxDesiredGait SandboxDesiredGait = ESIPSandboxDesiredGait::Run;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "SIP|Sandbox|ThreadSafe", meta = (AllowPrivateAccess = "true"))
+	float SandboxDesiredMaxWalkSpeed = 0.0f;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "SIP|Sandbox|ThreadSafe", meta = (AllowPrivateAccess = "true"))
+	TEnumAsByte<EMovementMode> SandboxMovementMode = MOVE_Walking;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "SIP|Sandbox|ThreadSafe", meta = (AllowPrivateAccess = "true"))
+	TEnumAsByte<EMovementMode> SandboxMovementModeLastFrame = MOVE_Walking;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "SIP|Sandbox|ThreadSafe", meta = (AllowPrivateAccess = "true"))
+	ESIPSandboxMovementState SandboxMovementState = ESIPSandboxMovementState::Grounded;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "SIP|Sandbox|ThreadSafe", meta = (AllowPrivateAccess = "true"))
+	ESIPSandboxRotationMode SandboxRotationMode = ESIPSandboxRotationMode::OrientToMovement;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "SIP|Sandbox|ThreadSafe", meta = (AllowPrivateAccess = "true"))
+	ESIPSandboxStance SandboxStance = ESIPSandboxStance::Standing;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "SIP|Sandbox|ThreadSafe", meta = (AllowPrivateAccess = "true"))
+	bool SandboxIsMoving = false;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "SIP|Sandbox|ThreadSafe", meta = (AllowPrivateAccess = "true"))
+	float SandboxGroundSpeed = 0.0f;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "SIP|Sandbox|ThreadSafe", meta = (AllowPrivateAccess = "true"))
+	FVector SandboxVelocity = FVector::ZeroVector;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "SIP|Sandbox|ThreadSafe", meta = (AllowPrivateAccess = "true"))
+	bool JustLanded = false;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "SIP|Sandbox|ThreadSafe", meta = (AllowPrivateAccess = "true"))
+	FVector LandVelocity = FVector::ZeroVector;
+
+	/**
+	 * Z 说明：主角动画原型预设。
+	 * 用于把主角运行时直接切到项目里现成的 Manny / Unarmed 资源链。
+	 * 是否压过显式 AnimBP Override，由 bPreferAnimationPrototypePreset 控制。
+	 */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "SIP|Animation", meta = (AllowPrivateAccess = "true"))
+	ESIPHeroAnimationPrototypePreset HeroAnimationPrototypePreset = ESIPHeroAnimationPrototypePreset::None;
+
+	/**
+	 * Z 说明：当动画原型预设有效时，是否优先使用预设资源而不是显式 AnimBP Override。
+	 * 开启后可以直接压过之前遗留的 BP_HeroAnimInstance 之类的临时承载蓝图，
+	 * 更适合当前“先把真原型跑起来”的阶段。
+	 */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "SIP|Animation", meta = (AllowPrivateAccess = "true"))
+	bool bPreferAnimationPrototypePreset = true;
+
+	/**
+	 * Z 说明：主角运行时要覆盖使用的 Skeletal Mesh。
+	 * 如果为空，则允许动画原型预设自动提供对应的 Mesh。
+	 */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "SIP|Animation", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<USkeletalMesh> HeroSkeletalMeshOverride;
+
+	/**
+	 * Z 说明：是否在运行时屏蔽模板默认动画蓝图
+	 * 开启后会自动移除 ABP_Quinn / ABP_Manny 这类模板遗留 AnimBP
+	 */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "SIP|Animation", meta = (AllowPrivateAccess = "true"))
+	bool bBlockTemplateAnimationBlueprints = true;
+
+	/**
+	 * Z 说明：主角运行时要使用的动画蓝图类
+	 * - 若设置，则会在运行时强制覆盖蓝图里继承下来的默认 AnimBP
+	 * - 若未设置且开启了模板屏蔽，则会直接清空模板 AnimBP
+	 */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "SIP|Animation", meta = (AllowPrivateAccess = "true"))
+	TSubclassOf<UAnimInstance> HeroAnimBlueprintClassOverride;
+
+	/**
+	 * Z 说明：是否允许“显式指定”的模板 AnimBP 作为合法 Override 生效。
+	 * 屏蔽模板的目的是避免蓝图残留误引用，不是阻止我们主动拿模板资源做原型。
+	 */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "SIP|Animation", meta = (AllowPrivateAccess = "true"))
+	bool bAllowExplicitTemplateAnimationBlueprintOverride = true;
+
+	/**
+	 * Z 说明：是否禁用 SkeletalMesh 自带的 Post Process Anim Blueprint
+	 * 开启后可一并切断 Quinn / Manny 网格上的默认后处理动画蓝图
+	 */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "SIP|Animation", meta = (AllowPrivateAccess = "true"))
+	bool bDisablePostProcessAnimationBlueprint = true;
+
 	/**
 	 * Z 说明：输入映射上下文
 	 * 来自 Enhanced Input 系统
@@ -125,6 +277,47 @@ public:
 	 */
 	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
 
+	FORCEINLINE USIPHeroAnimationBridgeComponent* GetHeroAnimationBridgeComponent() const { return HeroAnimationBridgeComponent; }
+
+	FORCEINLINE USIPSandboxLocomotionComponent* GetSandboxLocomotionComponent() const { return SandboxLocomotionComponent; }
+
+	FORCEINLINE ESIPHeroAnimationPrototypePreset GetHeroAnimationPrototypePreset() const { return HeroAnimationPrototypePreset; }
+
+	UFUNCTION(BlueprintPure, Category = "SIP|Sandbox")
+	USIPSandboxLocomotionComponent* GetSandboxLocomotionComponentBP() const;
+
+	UFUNCTION(BlueprintPure, Category = "SIP|Sandbox")
+	bool WantsToWalk() const;
+
+	UFUNCTION(BlueprintPure, Category = "SIP|Sandbox")
+	bool WantsToSprint() const;
+
+	UFUNCTION(BlueprintPure, Category = "SIP|Sandbox")
+	bool WantsToAim() const;
+
+	UFUNCTION(BlueprintPure, Category = "SIP|Sandbox")
+	bool WantsToStrafe() const;
+
+	UFUNCTION(BlueprintPure, Category = "SIP|Sandbox")
+	bool IsTraversalActive() const;
+
+	UFUNCTION(BlueprintPure, Category = "SIP|Sandbox")
+	ESIPSandboxDesiredGait GetDesiredGait() const;
+
+	UFUNCTION(BlueprintPure, Category = "SIP|Sandbox")
+	float GetDesiredMaxWalkSpeed() const;
+
+	UFUNCTION(BlueprintPure, Category = "SIP|Sandbox")
+	bool ShouldUseSandboxControllerDesiredRotation() const;
+
+	UFUNCTION(BlueprintCallable, Category = "SIP|Sandbox")
+	void SetTraversalActive(bool bEnabled);
+
+	UFUNCTION(BlueprintNativeEvent, Category = "SIP|Sandbox|Traversal")
+	bool TryConsumeJumpForTraversal();
+
+	void RefreshSandboxThreadSafeState();
+
 protected:
 
 
@@ -156,6 +349,17 @@ protected:
 	 */
 	void Input_Look(const FInputActionValue& Value);
 
+	void Input_WalkPressed();
+	void Input_WalkReleased();
+	void Input_SprintPressed();
+	void Input_SprintReleased();
+	void Input_AimPressed();
+	void Input_AimReleased();
+	void Input_StrafePressed();
+	void Input_StrafeReleased();
+	void Input_CrouchPressed();
+	void Input_CrouchReleased();
+
 	/**
 	 * Z 说明：设置输入组件
 	 * UE 生命周期函数
@@ -175,5 +379,32 @@ protected:
 	 */
 	virtual void BeginPlay();
 
-	
+	virtual void Tick(float DeltaSeconds) override;
+
+	virtual void Landed(const FHitResult& Hit) override;
+
+	/**
+	 * Z 说明：根据主角动画策略在运行时应用 AnimBP 覆盖或清理模板 ABP
+	 */
+	void ApplyHeroAnimationBlueprintPolicy();
+
+	/**
+	 * Z 说明：根据当前动画原型预设解析运行时要使用的 Mesh / AnimBP。
+	 * 这里只返回预设对应的资源，不覆盖蓝图里显式指定的 Override。
+	 */
+	bool ResolveHeroAnimationPrototypeAssets(USkeletalMesh*& OutSkeletalMesh, UClass*& OutAnimBlueprintClass) const;
+
+	/**
+	 * Z 说明：判断当前 AnimBP 是否属于模板默认动画蓝图
+	 */
+	bool IsTemplateAnimationBlueprintClass(const UClass* AnimClass) const;
+
+	virtual bool TryConsumeJumpForTraversal_Implementation();
+
+	void ClearJustLandedFlag();
+
+	uint64 LastSandboxStateSyncFrame = MAX_uint64;
+	bool bTraversalConsumedJumpInput = false;
+	bool bCachedCameraBoomCollisionTest = true;
+
 };

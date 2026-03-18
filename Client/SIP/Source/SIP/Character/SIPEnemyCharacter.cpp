@@ -4,23 +4,26 @@
 #include "TimerManager.h"
 #include "SIPLogCategory.h"
 
+// 敌人角色当前的专属初始化很少，主要复用父类的通用角色逻辑。
 ASIPEnemyCharacter::ASIPEnemyCharacter(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {
 }
 
+// 保留显式 BeginPlay，方便后续补充敌人专属启动逻辑。
 void ASIPEnemyCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 }
 
+// 进入敌人死亡流程后，根据配置决定是否延迟做最终销毁清理。
 void ASIPEnemyCharacter::OnDeath()
 {
 
-	// 关闭碰撞和移动（基类 OnDeathStarted 也会做，这里确保 AI 版本也执行）
+	// 关闭碰撞和移动，基类也会做一次，这里显式走父类链路保证敌人版本一致。
 	Super::OnDeath();
 
-	// 延迟销毁 Actor
+	// 如果配置了延迟时间，则延后销毁 Actor。
 	if (DestroyDelay > 0.0f)
 	{
 		GetWorldTimerManager().SetTimer(
@@ -37,6 +40,7 @@ void ASIPEnemyCharacter::OnDeath()
 	}
 }
 
+// 延迟销毁定时器最终落到这里，完成敌人 Actor 的清理。
 void ASIPEnemyCharacter::DestroyEnemy()
 {
 	UE_LOG(LogSIPCharacter, Log, TEXT("%s enemy destroyed."), *GetName());
