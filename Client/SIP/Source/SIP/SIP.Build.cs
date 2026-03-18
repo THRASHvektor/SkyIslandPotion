@@ -34,8 +34,7 @@ public class SIP : ModuleRules
             "NiagaraCore",
             "Niagara",
             "AIModule",
-            "PCG"
-        });
+            "PCG" });
         
         PrivateDependencyModuleNames.AddRange(new string[] {
             "Slate",
