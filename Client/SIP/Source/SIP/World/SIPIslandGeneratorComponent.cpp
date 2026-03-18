@@ -48,6 +48,16 @@ void USIPIslandGeneratorComponent::GenerateIsland(int32 Seed)
 	const int32 UsedSeed = (Seed != 0) ? Seed : DefaultSeed;
 	PCGComp->Seed = UsedSeed;
 
+	if (!PCGComp->GetGraph())
+	{
+		UE_LOG(LogSIP, Warning,
+			TEXT("[%s] GenerateIsland aborted: PCGComponent has no graph. Biome=[%s], Owner=[%s]"),
+			*GetName(),
+			*BiomeType.ToString(),
+			*GetNameSafe(GetOwner()));
+		return;
+	}
+
 	// 触发生成（异步，UE5 PCG 框架内部处理多线程）
 	PCGComp->GenerateLocal(false);
 
@@ -84,7 +94,7 @@ UPCGComponent* USIPIslandGeneratorComponent::GetOrCreatePCGComponent()
 		PCGComp = NewObject<UPCGComponent>(Owner, TEXT("PCGComponent"));
 		PCGComp->RegisterComponent();
 		Owner->AddInstanceComponent(PCGComp);
-		UE_LOG(LogSIP, Log, TEXT("[%s] PCGComponent created dynamically."), *Owner->GetName());
+		UE_LOG(LogSIP, Log, TEXT("[%s] PCGComponent created dynamically. Registered=%d"), *Owner->GetName(), PCGComp->IsRegistered() ? 1 : 0);
 	}
 
 	return PCGComp;

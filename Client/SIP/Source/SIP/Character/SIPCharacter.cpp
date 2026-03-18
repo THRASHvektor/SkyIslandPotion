@@ -21,7 +21,7 @@
 #include "SIPGameplayTags.h"
 #include "SIPLogCategory.h"
 
-
+// 创建角色通用基础结构，并挂上项目自定义的 ASC。
 ASIPCharacter::ASIPCharacter(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {
@@ -30,11 +30,13 @@ ASIPCharacter::ASIPCharacter(const FObjectInitializer& ObjectInitializer)
 	AbilitySystemComponent = CreateDefaultSubobject<USIPAbilitySystemComponent>(TEXT("AbilitySystemComponent"));
 }
 
+// 保留稳定的角色启动钩子，给主角和敌人派生类继续扩展。
 void ASIPCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 }
 
+// 在角色离开世界前回收 AbilitySet 赋予的能力和效果。
 void ASIPCharacter::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	if (AbilitySystemComponent)
@@ -44,6 +46,7 @@ void ASIPCharacter::EndPlay(const EEndPlayReason::Type EndPlayReason)
 	Super::EndPlay(EndPlayReason);
 }
 
+// 初始化 ASC、授予配置好的 AbilitySet，并保证一定存在可用的生命属性集。
 void ASIPCharacter::PostInitializeComponents()
 {
 	Super::PostInitializeComponents();
@@ -89,16 +92,19 @@ void ASIPCharacter::PostInitializeComponents()
 	}
 }
 
+// 面向引擎和玩法系统的 GAS 接口入口。
 UAbilitySystemComponent* ASIPCharacter::GetAbilitySystemComponent() const
 {
 	return AbilitySystemComponent;
 }
 
+// 方便需要 SIP 自定义 ASC 辅助函数的代码路径直接拿到具体类型。
 USIPAbilitySystemComponent* ASIPCharacter::GetSIPAbilitySystemComponent() const
 {
 	return AbilitySystemComponent;
 }
 
+// 生命属性查询统一经过 ASC，兼容运行时动态挂载的属性集。
 USIPHealthSet* ASIPCharacter::GetSIPHealthSet() const
 {
 	if (AbilitySystemComponent)
@@ -108,6 +114,7 @@ USIPHealthSet* ASIPCharacter::GetSIPHealthSet() const
 	return nullptr;
 }
 
+// 即便属性集缺失，也安全读取当前生命值。
 float ASIPCharacter::GetCurrentHealth() const
 {
 	if (const USIPHealthSet* HealthSet = GetSIPHealthSet())
@@ -118,6 +125,7 @@ float ASIPCharacter::GetCurrentHealth() const
 	return 0.0f;
 }
 
+// 即便属性集缺失，也安全读取当前最大生命值。
 float ASIPCharacter::GetMaxHealth() const
 {
 	if (const USIPHealthSet* HealthSet = GetSIPHealthSet())
@@ -128,11 +136,13 @@ float ASIPCharacter::GetMaxHealth() const
 	return 0.0f;
 }
 
+// 提供统一的死亡状态查询，供能力和战斗逻辑共用。
 bool ASIPCharacter::IsDeadOrDying() const
 {
 	return bIsDead;
 }
 
+// 通过 ASC 直接驱动 Health 属性，应用战斗伤害。
 bool ASIPCharacter::ApplyCombatDamage(float DamageAmount, AActor* DamageInstigator)
 {
 	if (DamageAmount <= 0.0f || IsDeadOrDying() || !AbilitySystemComponent)
@@ -161,6 +171,7 @@ bool ASIPCharacter::ApplyCombatDamage(float DamageAmount, AActor* DamageInstigat
 	return true;
 }
 
+// 通过 ASC 回血，保证属性复制和监听方行为一致。
 bool ASIPCharacter::RestoreHealth(float HealAmount)
 {
 	if (HealAmount <= 0.0f || !AbilitySystemComponent)
@@ -173,6 +184,7 @@ bool ASIPCharacter::RestoreHealth(float HealAmount)
 	return true;
 }
 
+// 进入一次性死亡状态，补齐标准死亡标签，并启动死亡表现流程。
 void ASIPCharacter::HandleOutOfHealth()
 {
 	if (bIsDead)
@@ -193,6 +205,7 @@ void ASIPCharacter::HandleOutOfHealth()
 	OnDeath();
 }
 
+// 反转死亡阶段标签，并恢复复活流程需要的移动与表现状态。
 void ASIPCharacter::HandleRevived()
 {
 	if (!bIsDead)
@@ -218,12 +231,14 @@ void ASIPCharacter::HandleRevived()
 	}
 }
 
+// 原生死亡流程的最终回调，蓝图可通过 K2_OnDeath 继续扩展表现。
 void ASIPCharacter::OnDeath()
 {
 	UE_LOG(LogSIP, Log, TEXT("%s has died."), *GetName());
 	K2_OnDeath();
 }
 
+// 死亡第一阶段回调：停止交互、关闭移动，并在需要时启动溶解效果。
 void ASIPCharacter::OnDeathStarted()
 {
 	UE_LOG(LogSIP, Log, TEXT("%s death started."), *GetName());
@@ -236,6 +251,7 @@ void ASIPCharacter::OnDeathStarted()
 	K2_OnDeathStarted();
 }
 
+// 复活阶段回调：恢复碰撞、移动，以及溶解材质状态。
 void ASIPCharacter::OnDeathStopped()
 {
 	UE_LOG(LogSIP, Log, TEXT("%s death stopped (revived)."), *GetName());
@@ -257,6 +273,7 @@ void ASIPCharacter::OnDeathStopped()
 	K2_OnDeathStopped();
 }
 
+// 收集 Mesh 材质并启动定时器，按时间推进溶解参数。
 void ASIPCharacter::StartDeathDissolve()
 {
 	if (!bUseDeathDissolve)
@@ -302,6 +319,7 @@ void ASIPCharacter::StartDeathDissolve()
 	GetWorldTimerManager().SetTimer(DeathDissolveTimerHandle, this, &ASIPCharacter::UpdateDeathDissolve, 0.03f, true);
 }
 
+// 以固定节奏推进溶解动画，Alpha 走满后结束效果。
 void ASIPCharacter::UpdateDeathDissolve()
 {
 	DeathDissolveElapsedTime += 0.03f;
@@ -323,6 +341,7 @@ void ASIPCharacter::UpdateDeathDissolve()
 	}
 }
 
+// 停止溶解定时器，并在需要时于效果完成后销毁 Actor。
 void ASIPCharacter::FinishDeathDissolve()
 {
 	GetWorldTimerManager().ClearTimer(DeathDissolveTimerHandle);

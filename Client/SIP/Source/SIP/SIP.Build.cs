@@ -24,9 +24,18 @@ public class SIP : ModuleRules
             "GameplayAbilities",
             "GameplayTasks",
             "EnhancedInput",
+            "AnimationLocomotionLibraryRuntime",
+            "AnimationWarpingRuntime",
+            "MotionWarping",
+            "PoseSearch",
+            "Chooser",
+            "ProxyTable",
+            "StateTreeModule",
             "NiagaraCore",
             "Niagara",
-                                                            "PCG" });
+            "AIModule",
+            "PCG"
+        });
         
         PrivateDependencyModuleNames.AddRange(new string[] {
             "Slate",
