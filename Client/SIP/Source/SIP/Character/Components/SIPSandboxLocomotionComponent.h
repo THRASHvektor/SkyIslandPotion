@@ -60,6 +60,8 @@ public:
 	// 标记当前处于 Traversal，让 Root Motion 暂时接管移动。
 	UFUNCTION(BlueprintCallable, Category = "SIP|Sandbox|Locomotion")
 	void SetTraversalActive(bool bEnabled);
+	UFUNCTION(BlueprintCallable, Category = "SIP|Sandbox|Locomotion")
+	void SetIceSurfaceActive(bool bEnabled);
 
 	// 把下蹲输入转发给拥有者角色，并同步下蹲标签。
 	UFUNCTION(BlueprintCallable, Category = "SIP|Sandbox|Locomotion")
@@ -88,6 +90,8 @@ public:
 	// 查询当前是否由 Traversal 逻辑接管移动。
 	UFUNCTION(BlueprintPure, Category = "SIP|Sandbox|Locomotion")
 	bool IsTraversalActive() const { return bTraversalActive; }
+	UFUNCTION(BlueprintPure, Category = "SIP|Sandbox|Locomotion")
+	bool IsIceSurfaceActive() const { return bIceSurfaceActive; }
 
 	// 判断 CharacterMovement 是否应该面向控制器，而不是面向移动方向。
 	UFUNCTION(BlueprintPure, Category = "SIP|Sandbox|Locomotion")
@@ -111,6 +115,7 @@ private:
 
 	// 在瞄准、横移或 Traversal 状态变化后重新配置转向规则。
 	void RefreshRotationMode();
+	void RefreshSurfaceMovementProfile();
 
 	// 在 CharacterMovement 上应用或移除步行/冲刺速度覆盖。
 	void RefreshWalkSpeedOverride();
@@ -149,6 +154,23 @@ private:
 	// 控制器朝向模式下使用的更快转向速度。
 	UPROPERTY(EditDefaultsOnly, Category = "SIP|Sandbox|Locomotion")
 	FRotator StrafeRotationRate = FRotator(0.0f, 720.0f, 0.0f);
+	UPROPERTY(EditDefaultsOnly, Category = "SIP|Sandbox|Locomotion|Ice", meta = (ClampMin = "0.01", ClampMax = "1.0"))
+	float IceMaxAccelerationMultiplier = 0.45f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "SIP|Sandbox|Locomotion|Ice", meta = (ClampMin = "0.01", ClampMax = "1.0"))
+	float IceBrakingDecelerationMultiplier = 0.20f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "SIP|Sandbox|Locomotion|Ice", meta = (ClampMin = "0.01", ClampMax = "1.0"))
+	float IceGroundFrictionMultiplier = 0.18f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "SIP|Sandbox|Locomotion|Ice", meta = (ClampMin = "0.01", ClampMax = "1.0"))
+	float IceBrakingFrictionFactorMultiplier = 0.35f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "SIP|Sandbox|Locomotion|Ice", meta = (ClampMin = "0.01", ClampMax = "1.0"))
+	float IceRotationRateMultiplier = 0.65f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "SIP|Sandbox|Locomotion|Ice")
+	bool bStartOnIceForDebug = false;
 
 	// 来自输入侧的粘性意图开关状态。
 	bool bWalkIntent = false;
@@ -156,10 +178,16 @@ private:
 	bool bAimIntent = false;
 	bool bStrafeIntent = false;
 	bool bTraversalActive = false;
+	bool bIceSurfaceActive = false;
 
 	// 记录当前 MaxWalkSpeed 是否正被本组件覆盖。
 	bool bWalkSpeedOverridden = false;
 
 	// 组件覆盖步态前原本存在的移动速度值。
 	float CachedBaseMoveSpeed = 0.0f;
+	float CachedBaseMaxAcceleration = 0.0f;
+	float CachedBaseBrakingDecelerationWalking = 0.0f;
+	float CachedBaseGroundFriction = 0.0f;
+	float CachedBaseBrakingFrictionFactor = 0.0f;
+	bool bHasCachedBaseMovementProfile = false;
 };

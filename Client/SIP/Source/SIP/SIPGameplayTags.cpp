@@ -50,6 +50,7 @@ namespace SIPGameplayTags
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(State_Movement_Strafing, "State.Movement.Strafing", "Character is currently strafing.");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(State_Movement_Crouching, "State.Movement.Crouching", "Character is currently crouching.");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(State_Movement_Traversing, "State.Movement.Traversing", "Character is performing a traversal action.");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(State_Surface_Ice, "State.Surface.Ice", "Character is currently moving on an ice-like surface.");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(State_Dead, "State.Dead", "Character is dead.");
 
 	// ==================== 动画事件标签 ====================

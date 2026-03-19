@@ -43,6 +43,8 @@ protected:
 	// Z 说明：收集攻击范围内的有效目标。
 	TArray<ASIPCharacter*> CollectTargets(ASIPCharacter* SourceCharacter) const;
 
+	float GetAttackRangeMultiplier(const ASIPCharacter* SourceCharacter) const;
+
 	// Z 说明：启动动画驱动攻击流程，等待命中窗口事件或延时回退。
 	bool StartAnimationDrivenAttack(ASIPCharacter* SourceCharacter);
 
@@ -84,6 +86,15 @@ protected:
 	// Z 说明：攻击碰撞球半径。
 	UPROPERTY(EditDefaultsOnly, Category = "Attack")
 	float AttackRadius = 100.0f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Attack|Ice")
+	bool bEnableIceMomentumAttack = true;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Attack|Ice", meta = (ClampMin = "0.0"))
+	float IceMomentumMinSpeed = 220.0f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Attack|Ice", meta = (ClampMin = "1.0"))
+	float IceMomentumAttackRangeMultiplier = 1.35f;
 
 	// Z 说明：攻击表现使用的蒙太奇，可为空。
 	UPROPERTY(EditDefaultsOnly, Category = "Attack|Animation")

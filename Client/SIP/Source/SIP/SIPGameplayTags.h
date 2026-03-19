@@ -69,6 +69,7 @@ namespace SIPGameplayTags
 	SIP_API	UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Movement_Strafing);
 	SIP_API	UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Movement_Crouching);
 	SIP_API	UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Movement_Traversing);
+	SIP_API	UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Surface_Ice);
 	SIP_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Dead);
 
 	// ==================== 动画事件标签 ====================
