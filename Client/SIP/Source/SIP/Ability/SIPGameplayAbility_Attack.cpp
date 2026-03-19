@@ -143,7 +143,8 @@ TArray<ASIPCharacter*> USIPGameplayAbility_Attack::CollectTargets(ASIPCharacter*
 	TArray<AActor*> ActorsToIgnore;
 	ActorsToIgnore.Add(SourceCharacter);
 
-	const FVector StartLocation = SourceCharacter->GetActorLocation() + SourceCharacter->GetActorForwardVector() * AttackRange;
+	const float EffectiveAttackRange = AttackRange * GetAttackRangeMultiplier(SourceCharacter);
+	const FVector StartLocation = SourceCharacter->GetActorLocation() + SourceCharacter->GetActorForwardVector() * EffectiveAttackRange;
 	UKismetSystemLibrary::SphereOverlapActors(
 		SourceCharacter,
 		StartLocation,
@@ -164,6 +165,24 @@ TArray<ASIPCharacter*> USIPGameplayAbility_Attack::CollectTargets(ASIPCharacter*
 	}
 
 	return Targets;
+}
+
+float USIPGameplayAbility_Attack::GetAttackRangeMultiplier(const ASIPCharacter* SourceCharacter) const
+{
+	if (!bEnableIceMomentumAttack)
+	{
+		return 1.0f;
+	}
+
+	const ASIPHeroCharacter* HeroCharacter = Cast<ASIPHeroCharacter>(SourceCharacter);
+	if (!HeroCharacter || !HeroCharacter->IsOnIceSurface())
+	{
+		return 1.0f;
+	}
+
+	return SourceCharacter->GetVelocity().Size2D() >= IceMomentumMinSpeed
+		? FMath::Max(1.0f, IceMomentumAttackRangeMultiplier)
+		: 1.0f;
 }
 
 /**

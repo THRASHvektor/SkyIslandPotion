@@ -210,6 +210,11 @@ bool ASIPHeroCharacter::IsTraversalActive() const
 	return SandboxLocomotionComponent ? SandboxLocomotionComponent->IsTraversalActive() : false;
 }
 
+bool ASIPHeroCharacter::IsOnIceSurface() const
+{
+	return SandboxLocomotionComponent ? SandboxLocomotionComponent->IsIceSurfaceActive() : false;
+}
+
 ESIPSandboxDesiredGait ASIPHeroCharacter::GetDesiredGait() const
 {
 	return SandboxLocomotionComponent
@@ -247,6 +252,14 @@ void ASIPHeroCharacter::SetTraversalActive(const bool bEnabled)
 	if (SandboxLocomotionComponent)
 	{
 		SandboxLocomotionComponent->SetTraversalActive(bEnabled);
+	}
+}
+
+void ASIPHeroCharacter::SetIceSurfaceActive(const bool bEnabled)
+{
+	if (SandboxLocomotionComponent)
+	{
+		SandboxLocomotionComponent->SetIceSurfaceActive(bEnabled);
 	}
 }
 
@@ -296,6 +309,7 @@ void ASIPHeroCharacter::RefreshSandboxThreadSafeState()
 		SandboxWantsToAim = SandboxLocomotionComponent->WantsToAim();
 		SandboxWantsToStrafe = SandboxLocomotionComponent->WantsToStrafe();
 		SandboxTraversalActive = SandboxLocomotionComponent->IsTraversalActive();
+		SandboxOnIce = SandboxLocomotionComponent->IsIceSurfaceActive();
 		SandboxDesiredGait = GetSampleCompatibleGait(SandboxLocomotionComponent->GetDesiredGait());
 		SandboxDesiredMaxWalkSpeed = SandboxLocomotionComponent->GetDesiredMaxWalkSpeed();
 	}
@@ -306,6 +320,7 @@ void ASIPHeroCharacter::RefreshSandboxThreadSafeState()
 		SandboxWantsToAim = false;
 		SandboxWantsToStrafe = false;
 		SandboxTraversalActive = false;
+		SandboxOnIce = false;
 		SandboxDesiredGait = ESIPSandboxDesiredGait::Run;
 		SandboxDesiredMaxWalkSpeed = MovementComponent ? MovementComponent->MaxWalkSpeed : 0.0f;
 	}

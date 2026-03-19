@@ -155,6 +155,9 @@ public:
 	bool SandboxTraversalActive = false;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "SIP|Sandbox|ThreadSafe", meta = (AllowPrivateAccess = "true"))
+	bool SandboxOnIce = false;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "SIP|Sandbox|ThreadSafe", meta = (AllowPrivateAccess = "true"))
 	bool SandboxUseControllerDesiredRotation = false;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "SIP|Sandbox|ThreadSafe", meta = (AllowPrivateAccess = "true"))
@@ -302,6 +305,9 @@ public:
 	bool IsTraversalActive() const;
 
 	UFUNCTION(BlueprintPure, Category = "SIP|Sandbox")
+	bool IsOnIceSurface() const;
+
+	UFUNCTION(BlueprintPure, Category = "SIP|Sandbox")
 	ESIPSandboxDesiredGait GetDesiredGait() const;
 
 	UFUNCTION(BlueprintPure, Category = "SIP|Sandbox")
@@ -312,6 +318,9 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "SIP|Sandbox")
 	void SetTraversalActive(bool bEnabled);
+
+	UFUNCTION(BlueprintCallable, Category = "SIP|Sandbox")
+	void SetIceSurfaceActive(bool bEnabled);
 
 	UFUNCTION(BlueprintNativeEvent, Category = "SIP|Sandbox|Traversal")
 	bool TryConsumeJumpForTraversal();

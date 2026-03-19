@@ -18,6 +18,12 @@ void USIPSandboxLocomotionComponent::BeginPlay()
 {
 	Super::BeginPlay();
 	CacheOwnerReferences();
+	if (bStartOnIceForDebug)
+	{
+		bIceSurfaceActive = true;
+		SetLooseStateTag(SIPGameplayTags::State_Surface_Ice, true);
+	}
+	RefreshSurfaceMovementProfile();
 	RefreshRotationMode();
 	RefreshWalkSpeedOverride();
 	SyncOwnerAnimationState();
@@ -87,6 +93,20 @@ void USIPSandboxLocomotionComponent::SetTraversalActive(const bool bEnabled)
 
 	bTraversalActive = bEnabled;
 	SetLooseStateTag(SIPGameplayTags::State_Movement_Traversing, bTraversalActive);
+	RefreshRotationMode();
+	SyncOwnerAnimationState();
+}
+
+void USIPSandboxLocomotionComponent::SetIceSurfaceActive(const bool bEnabled)
+{
+	if (bIceSurfaceActive == bEnabled)
+	{
+		return;
+	}
+
+	bIceSurfaceActive = bEnabled;
+	SetLooseStateTag(SIPGameplayTags::State_Surface_Ice, bIceSurfaceActive);
+	RefreshSurfaceMovementProfile();
 	RefreshRotationMode();
 	SyncOwnerAnimationState();
 }
@@ -165,6 +185,14 @@ void USIPSandboxLocomotionComponent::CacheOwnerReferences()
 	if (const UCharacterMovementComponent* MovementComponent = OwnerMovementComponent.Get())
 	{
 		CachedBaseMoveSpeed = MovementComponent->MaxWalkSpeed;
+		if (!bHasCachedBaseMovementProfile)
+		{
+			CachedBaseMaxAcceleration = MovementComponent->MaxAcceleration;
+			CachedBaseBrakingDecelerationWalking = MovementComponent->BrakingDecelerationWalking;
+			CachedBaseGroundFriction = MovementComponent->GroundFriction;
+			CachedBaseBrakingFrictionFactor = MovementComponent->BrakingFrictionFactor;
+			bHasCachedBaseMovementProfile = true;
+		}
 	}
 }
 
@@ -186,10 +214,40 @@ void USIPSandboxLocomotionComponent::RefreshRotationMode()
 	}
 
 	const bool bUseControllerDesiredRotation = ShouldUseControllerDesiredRotation();
+	const float RotationRateMultiplier = bIceSurfaceActive ? IceRotationRateMultiplier : 1.0f;
 	Character->bUseControllerRotationYaw = false;
 	MovementComponent->bUseControllerDesiredRotation = bUseControllerDesiredRotation;
 	MovementComponent->bOrientRotationToMovement = !bUseControllerDesiredRotation;
-	MovementComponent->RotationRate = bUseControllerDesiredRotation ? StrafeRotationRate : MovementRotationRate;
+	MovementComponent->RotationRate = (bUseControllerDesiredRotation ? StrafeRotationRate : MovementRotationRate) * RotationRateMultiplier;
+}
+
+void USIPSandboxLocomotionComponent::RefreshSurfaceMovementProfile()
+{
+	UCharacterMovementComponent* MovementComponent = OwnerMovementComponent.Get();
+	if (!MovementComponent)
+	{
+		CacheOwnerReferences();
+		MovementComponent = OwnerMovementComponent.Get();
+	}
+
+	if (!MovementComponent || !bHasCachedBaseMovementProfile)
+	{
+		return;
+	}
+
+	if (bIceSurfaceActive)
+	{
+		MovementComponent->MaxAcceleration = CachedBaseMaxAcceleration * IceMaxAccelerationMultiplier;
+		MovementComponent->BrakingDecelerationWalking = CachedBaseBrakingDecelerationWalking * IceBrakingDecelerationMultiplier;
+		MovementComponent->GroundFriction = CachedBaseGroundFriction * IceGroundFrictionMultiplier;
+		MovementComponent->BrakingFrictionFactor = CachedBaseBrakingFrictionFactor * IceBrakingFrictionFactorMultiplier;
+		return;
+	}
+
+	MovementComponent->MaxAcceleration = CachedBaseMaxAcceleration;
+	MovementComponent->BrakingDecelerationWalking = CachedBaseBrakingDecelerationWalking;
+	MovementComponent->GroundFriction = CachedBaseGroundFriction;
+	MovementComponent->BrakingFrictionFactor = CachedBaseBrakingFrictionFactor;
 }
 
 // 把请求到的步态写成 MaxWalkSpeed 覆盖值，同时保留原始速度方便恢复。
