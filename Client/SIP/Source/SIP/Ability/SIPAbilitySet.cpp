@@ -1,6 +1,5 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 /**
- * Z 说明：
  * SIPAbilitySet.cpp 实现了技能集的授予逻辑
  * 
  * 主要功能：
@@ -18,7 +17,6 @@
 #include "AttributeSet.h"
 
 /**
- * Z 说明：添加技能句柄到列表
  * 用于追踪已授予的技能，便于后续移除
  */
 void FSIPAbilitySet_GrantedHandles::AddAbilitySpecHandle(const FGameplayAbilitySpecHandle& Handle)
@@ -30,7 +28,6 @@ void FSIPAbilitySet_GrantedHandles::AddAbilitySpecHandle(const FGameplayAbilityS
 }
 
 /**
- * Z 说明：添加 GameplayEffect 句柄到列表
  * 用于追踪已授予的效果，便于后续移除
  */
 void FSIPAbilitySet_GrantedHandles::AddGameplayEffectHandle(const FActiveGameplayEffectHandle& Handle)
@@ -42,7 +39,6 @@ void FSIPAbilitySet_GrantedHandles::AddGameplayEffectHandle(const FActiveGamepla
 }
 
 /**
- * Z 说明：添加 AttributeSet 指针到列表
  * 用于追踪已授予的属性集，便于后续移除
  */
 void FSIPAbilitySet_GrantedHandles::AddAttributeSet(UAttributeSet* AttributeSet)
@@ -54,7 +50,6 @@ void FSIPAbilitySet_GrantedHandles::AddAttributeSet(UAttributeSet* AttributeSet)
 }
 
 /**
- * Z 说明：从 ASC 移除所有已授予的内容
  * 角色死亡或需要重置技能时调用
  * 
  * 移除流程：
@@ -103,7 +98,6 @@ USIPAbilitySet::USIPAbilitySet(const FObjectInitializer& ObjectInitializer)
 }
 
 /**
- * Z 说明：将技能集授予给 ASC 的核心函数
  * 在角色初始化时调用，授予所有配置好的 Ability、AttributeSet、GameplayEffect
  * 
  * 授予流程：
@@ -123,7 +117,6 @@ void USIPAbilitySet::GiveToAbilitySystem(UAbilitySystemComponent* ASC, FSIPAbili
 {
 	check(ASC);
 
-	// Z 说明：第一步 - 授予技能
 	for (int32 AbilityIndex = 0; AbilityIndex < GrantedGameplayAbilities.Num(); ++AbilityIndex)
 	{
 		const FSIPAbilitySet_GameplayAbility& AbilityToGrant = GrantedGameplayAbilities[AbilityIndex];
@@ -134,18 +127,14 @@ void USIPAbilitySet::GiveToAbilitySystem(UAbilitySystemComponent* ASC, FSIPAbili
 			continue;
 		}
 
-		// Z 说明：获取 Ability 的 CDO（Class Default Object）
 		UGameplayAbility* AbilityCDO = AbilityToGrant.Ability->GetDefaultObject<UGameplayAbility>();
 
-		// Z 说明：创建技能规格
 		FGameplayAbilitySpec AbilitySpec(AbilityCDO);
 		AbilitySpec.SourceObject = SourceObject;
         
-		// Z 说明：关键！将 InputTag 添加到 DynamicAbilityTags
 		// 这样 ASC 可以通过 InputTag 找到对应的 Ability
 		AbilitySpec.DynamicAbilityTags.AddTag(AbilityToGrant.InputTag);
 
-		// Z 说明：授予技能，获取句柄
 		const FGameplayAbilitySpecHandle AbilitySpecHandle = ASC->GiveAbility(AbilitySpec);
 
 		if (OutGrantedHandles)
@@ -154,7 +143,6 @@ void USIPAbilitySet::GiveToAbilitySystem(UAbilitySystemComponent* ASC, FSIPAbili
 		}
 	}
 
-	// Z 说明：第二步 - 授予属性集
 	for (int32 AttributeSetIndex = 0; AttributeSetIndex < GrantedAttributeSets.Num(); ++AttributeSetIndex)
 	{
 		const FSIPAbilitySet_AttributeSet& AttributeSetToGrant = GrantedAttributeSets[AttributeSetIndex];
@@ -165,10 +153,8 @@ void USIPAbilitySet::GiveToAbilitySystem(UAbilitySystemComponent* ASC, FSIPAbili
 			continue;
 		}
 
-		// Z 说明：创建 AttributeSet 实例
 		UAttributeSet* NewAttributeSet = NewObject<UAttributeSet>(ASC->GetOwner(), AttributeSetToGrant.AttributeSet);
         
-		// Z 说明：添加到 ASC
 		ASC->AddAttributeSetSubobject(NewAttributeSet);
 
 		if (OutGrantedHandles)
@@ -177,7 +163,6 @@ void USIPAbilitySet::GiveToAbilitySystem(UAbilitySystemComponent* ASC, FSIPAbili
 		}
 	}
 
-	// Z 说明：第三步 - 应用 GameplayEffects
 	for (int32 EffectIndex = 0; EffectIndex < GrantedGameplayEffects.Num(); ++EffectIndex)
 	{
 		const FSIPAbilitySet_GameplayEffect& EffectToGrant = GrantedGameplayEffects[EffectIndex];
@@ -188,14 +173,11 @@ void USIPAbilitySet::GiveToAbilitySystem(UAbilitySystemComponent* ASC, FSIPAbili
 			continue;
 		}
 
-		// Z 说明：获取 GE 的 CDO
 		UGameplayEffect* EffectCDO = EffectToGrant.GameplayEffect->GetDefaultObject<UGameplayEffect>();
         
-		// Z 说明：创建效果上下文
 		FGameplayEffectContextHandle EffectContext = ASC->MakeEffectContext();
 		EffectContext.AddSourceObject(SourceObject);
 
-		// Z 说明：应用效果到自身
 		const FActiveGameplayEffectHandle EffectHandle = ASC->ApplyGameplayEffectToSelf(
 			EffectCDO, 
 			EffectToGrant.EffectLevel, 

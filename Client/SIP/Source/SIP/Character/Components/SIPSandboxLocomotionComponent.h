@@ -10,7 +10,6 @@ class USIPAbilitySystemComponent;
 class UCharacterMovementComponent;
 
 /**
- * Z 说明：
  * 供沙盒动画层使用的轻量移动语义枚举。
  * 实际速度仍可由 GAS 控制，而动画层通过这个枚举稳定选择走路、跑步和冲刺资源。
  */
@@ -23,7 +22,6 @@ enum class ESIPSandboxDesiredGait : uint8
 };
 
 /**
- * Z 说明：
  * 把玩家的移动意图同时桥接到三个位置：
  * 1. CharacterMovement 的转向与速度规则。
  * 2. 供玩法和动画消费的 Loose Gameplay Tags。
@@ -71,6 +69,11 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "SIP|Sandbox|Locomotion")
 	void HandleCrouchReleased();
 
+	// 当外部战斗语义（如武器模组、施法阶段）变化时，
+	// 重新评估由该组件负责的移动语义和 CharacterMovement 配置。
+	UFUNCTION(BlueprintCallable, Category = "SIP|Sandbox|Locomotion")
+	void HandleExternalSemanticStateChanged();
+
 	// 查询玩家当前是否偏好步行节奏。
 	UFUNCTION(BlueprintPure, Category = "SIP|Sandbox|Locomotion")
 	bool WantsToWalk() const { return bWalkIntent; }
@@ -110,6 +113,18 @@ public:
 	float GetBaseMoveSpeed() const { return CachedBaseMoveSpeed; }
 
 private:
+	/**
+	 * 从 loose gameplay tags 中判断当前是否处于 FlaskRig 施法窗口。
+	 */
+	bool IsFlaskRigCasting() const;
+
+	/**
+	 * 判断当前是否处于 Ice Rune Dagger 的战斗转向语义状态。
+	 *
+	 * 这些状态需要的转向手感更接近战斗，而不是普通冰面移动。
+	 */
+	bool IsIceRuneDaggerCombatSteeringActive() const;
+
 	// 在玩法开始后解析并缓存角色、ASC 和移动组件。
 	void CacheOwnerReferences();
 
@@ -154,6 +169,15 @@ private:
 	// 控制器朝向模式下使用的更快转向速度。
 	UPROPERTY(EditDefaultsOnly, Category = "SIP|Sandbox|Locomotion")
 	FRotator StrafeRotationRate = FRotator(0.0f, 720.0f, 0.0f);
+
+	UPROPERTY(EditDefaultsOnly, Category = "SIP|Sandbox|Locomotion|Combat")
+	FRotator IceCombatRotationRate = FRotator(0.0f, 860.0f, 0.0f);
+
+	// 炼金投掷处于预备/释放阶段时，临时压低移动速度，
+	// 让角色更像“收身准备出手”，同时也给 MM 一个更清晰的语义信号。
+	UPROPERTY(EditDefaultsOnly, Category = "SIP|Sandbox|Locomotion|Combat", meta = (ClampMin = "0.0"))
+	float FlaskRigCastSpeedCap = 320.0f;
+
 	UPROPERTY(EditDefaultsOnly, Category = "SIP|Sandbox|Locomotion|Ice", meta = (ClampMin = "0.01", ClampMax = "1.0"))
 	float IceMaxAccelerationMultiplier = 0.45f;
 

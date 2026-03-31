@@ -7,7 +7,6 @@
 #include "InteractionComponent.generated.h"
 
 /**
- * Z 说明：
  * UInteractionComponent 
  * 用于搜寻可交互物体、处理玩家操控的角色与世界中可交互对象的交互逻辑（充当输入到交互对象内部逻辑的桥梁）
  * 针对ECC_Interactable碰撞通道进行查询

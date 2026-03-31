@@ -8,7 +8,6 @@
 #include "SIPPawn.generated.h"
 
 /**
- * Z 说明：
  * 轻量级 Pawn 基类，用于可收集物、可交互道具等简单世界实体。
  * 这些对象虽然不是 Character，但仍然能受益于 Pawn 的归属和生命周期管理。
  */

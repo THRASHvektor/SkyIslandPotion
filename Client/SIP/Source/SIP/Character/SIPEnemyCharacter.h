@@ -1,6 +1,5 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 /**
- * Z 说明：
  * ASIPEnemyCharacter 是所有敌人角色的 C++ 基类
  * 继承自 ASIPCharacter，共享 GAS/血量/死亡流程
  *

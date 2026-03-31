@@ -2,16 +2,17 @@
 
 #pragma once
 
+#include "Combat/SIPCombatSemanticResolver.h"
 #include "CoreMinimal.h"
 #include "Animation/AnimInstance.h"
 #include "GameplayTagContainer.h"
+#include "PoseSearch/PoseSearchLibrary.h"
 #include "SIPHeroAnimInstance.generated.h"
 
 class ASIPHeroCharacter;
 class USIPHeroAnimationBridgeComponent;
 
 /**
- * Z 说明：
  * SIPHeroAnimInstance 是主角动画蓝图推荐继承的基础 AnimInstance。
  *
  * 核心职责：
@@ -25,72 +26,186 @@ class SIP_API USIPHeroAnimInstance : public UAnimInstance
 	GENERATED_BODY()
 
 public:
-	// Z 说明：初始化动画实例时缓存主角与桥接组件引用
+	/**
+	 * 在 Blueprint 初始化开始消费线程安全状态之前，
+	 * 先缓存主角和桥接组件引用。
+	 */
 	virtual void NativeInitializeAnimation() override;
 
-	// Z 说明：每帧同步桥接组件中的动画表现数据
+	/**
+	 * 每次更新时刷新面向动画层的状态快照。
+	 */
 	virtual void NativeUpdateAnimation(float DeltaSeconds) override;
 
-	// Z 说明：返回当前拥有该动画实例的主角角色
-	UFUNCTION(BlueprintPure, Category = "SIP|Animation")
+	UFUNCTION(BlueprintPure, Category = "SIP|Animation", meta = (BlueprintThreadSafe))
 	ASIPHeroCharacter* GetOwningHeroCharacter() const { return OwningHeroCharacter.Get(); }
 
-	// Z 说明：返回当前动画实例关联的桥接组件
-	UFUNCTION(BlueprintPure, Category = "SIP|Animation")
+	UFUNCTION(BlueprintPure, Category = "SIP|Animation", meta = (BlueprintThreadSafe))
 	USIPHeroAnimationBridgeComponent* GetAnimationBridgeComponent() const { return AnimationBridgeComponent.Get(); }
 
+	UFUNCTION(BlueprintPure, Category = "SIP|Animation|Combat", meta = (BlueprintThreadSafe))
+	bool HasWeaponModuleTag(FGameplayTag Tag) const;
+
+	UFUNCTION(BlueprintPure, Category = "SIP|Animation|Combat", meta = (BlueprintThreadSafe))
+	bool HasCastPhaseTag(FGameplayTag Tag) const;
+
+	UFUNCTION(BlueprintPure, Category = "SIP|Animation|Combat", meta = (BlueprintThreadSafe))
+	bool HasCombatActionFamilyTag(FGameplayTag Tag) const;
+
+	UFUNCTION(BlueprintPure, Category = "SIP|Animation|Combat", meta = (BlueprintThreadSafe))
+	bool IsFlaskRigCasting() const;
+
+	UFUNCTION(BlueprintPure, Category = "SIP|Animation|Combat", meta = (BlueprintThreadSafe))
+	bool HasCombatBodyStateTag(FGameplayTag Tag) const;
+
+	UFUNCTION(BlueprintPure, Category = "SIP|Animation|Combat", meta = (BlueprintThreadSafe))
+	bool IsIceRuneDaggerSlideAttack() const;
+
+	UFUNCTION(BlueprintPure, Category = "SIP|Animation|Combat", meta = (BlueprintThreadSafe))
+	bool IsIceRuneDaggerSlipRecovery() const;
+
+	UFUNCTION(BlueprintPure, Category = "SIP|Animation|Combat", meta = (BlueprintThreadSafe))
+	bool ShouldEnableCombatAimOffset() const;
+
+	UFUNCTION(BlueprintPure, Category = "SIP|Animation|Combat", meta = (BlueprintThreadSafe))
+	bool ShouldPreferCombatSteering() const;
+
+	UFUNCTION(BlueprintPure, Category = "SIP|Animation|Combat", meta = (BlueprintThreadSafe))
+	float GetCombatSemanticLeanScale() const;
+
+	/**
+	 * Motion Matching 应在返回 true 时被 ABP 暂停，
+	 * 让战斗蒙太奇完全接管角色。
+	 */
+	UFUNCTION(BlueprintPure, Category = "SIP|Animation|Combat", meta = (BlueprintThreadSafe))
+	bool ShouldSuppressMotionMatching() const;
+
+	/**
+	 * 返回语义系统建议的 locomotion 模式，
+	 * ABP 可以用它来选择正确的 PoseSearchDatabase。
+	 */
+	UFUNCTION(BlueprintPure, Category = "SIP|Animation|Combat", meta = (BlueprintThreadSafe))
+	ESIPSemanticLocomotionMode GetSemanticLocomotionMode() const;
+
+	/**
+	 * 返回当前语义状态对应的 PoseSearch 数据库标签。
+	 * 当 Profile 中配置了对应 Mode 的标签时返回有效值，
+	 * 否则返回空标签（交给 ABP 自行按默认逻辑选库）。
+	 */
+	UFUNCTION(BlueprintPure, Category = "SIP|Animation|Combat", meta = (BlueprintThreadSafe))
+	FGameplayTag GetDesiredPoseSearchDatabaseTag() const;
+
+	/**
+	 * ABP 的 Update_MotionMatching 中 Get MMInterrupt Mode 节点调用此函数。
+	 * 抑制期间返回 DoNotInterrupt，让 MM 继续播放当前动画而不重新搜索；
+	 * 非抑制期间返回 InterruptOnDatabaseChange，允许 Chooser 切库时中断。
+	 */
+	UFUNCTION(BlueprintPure, Category = "SIP|Animation|Combat", meta = (BlueprintThreadSafe))
+	EPoseSearchInterruptMode GetMMInterruptMode() const;
+
 protected:
-	// Z 说明：重新缓存拥有者角色与桥接组件引用
+	/**
+	 * 当引用失效时，重新解析拥有者主角和桥接组件。
+	 */
 	void CacheAnimationReferences();
 
-	// Z 说明：将桥接组件状态同步到当前动画实例属性
+	/**
+	 * 把桥接组件持有的运行时状态复制进 AnimInstance 字段。
+	 */
 	void SyncFromAnimationBridge();
 
-	// Z 说明：清空动画实例缓存的表现层状态
+	/**
+	 * 从当前语义状态派生出动画层会频繁读取的布尔量和标量缓存。
+	 */
+	void UpdateCombatSemanticCache();
+
+	/**
+	 * 当桥接数据不可用时，重置 AnimInstance 内部状态。
+	 */
 	void ResetAnimationState();
 
 protected:
-	// Z 说明：当前拥有该动画实例的主角角色
-	UPROPERTY(Transient, BlueprintReadOnly, Category = "SIP|Animation")
+	UPROPERTY(Transient, BlueprintReadWrite, Category = "SIP|Animation")
 	TObjectPtr<ASIPHeroCharacter> OwningHeroCharacter = nullptr;
 
-	// Z 说明：当前关联的动画桥接组件
-	UPROPERTY(Transient, BlueprintReadOnly, Category = "SIP|Animation")
+	UPROPERTY(Transient, BlueprintReadWrite, Category = "SIP|Animation")
 	TObjectPtr<USIPHeroAnimationBridgeComponent> AnimationBridgeComponent = nullptr;
 
-	// Z 说明：角色当前平面地面速度
-	UPROPERTY(Transient, BlueprintReadOnly, Category = "SIP|Animation")
+	UPROPERTY(Transient, BlueprintReadWrite, Category = "SIP|Animation")
 	float GroundSpeed = 0.0f;
 
-	// Z 说明：角色当前世界速度
-	UPROPERTY(Transient, BlueprintReadOnly, Category = "SIP|Animation")
+	UPROPERTY(Transient, BlueprintReadWrite, Category = "SIP|Animation")
 	FVector Velocity = FVector::ZeroVector;
 
-	// Z 说明：角色当前是否正在移动
-	UPROPERTY(Transient, BlueprintReadOnly, Category = "SIP|Animation")
+	UPROPERTY(Transient, BlueprintReadWrite, Category = "SIP|Animation")
 	bool bIsMoving = false;
 
-	// Z 说明：角色当前是否处于下落状态
-	UPROPERTY(Transient, BlueprintReadOnly, Category = "SIP|Animation")
+	UPROPERTY(Transient, BlueprintReadWrite, Category = "SIP|Animation")
 	bool bIsFalling = false;
 
-	// Z 说明：角色当前是否处于跳跃上升阶段
-	UPROPERTY(Transient, BlueprintReadOnly, Category = "SIP|Animation")
+	UPROPERTY(Transient, BlueprintReadWrite, Category = "SIP|Animation")
 	bool bIsJumping = false;
 
-	// Z 说明：角色当前是否处于战斗表现阶段
-	UPROPERTY(Transient, BlueprintReadOnly, Category = "SIP|Animation")
+	UPROPERTY(Transient, BlueprintReadWrite, Category = "SIP|Animation")
 	bool bIsInCombatPresentation = false;
 
-	// Z 说明：当前动画实例是否成功连接到桥接组件
-	UPROPERTY(Transient, BlueprintReadOnly, Category = "SIP|Animation")
+	UPROPERTY(Transient, BlueprintReadWrite, Category = "SIP|Animation")
 	bool bHasAnimationBridge = false;
 
-	// Z 说明：桥接组件当前维护的表现状态标签集合
-	UPROPERTY(Transient, BlueprintReadOnly, Category = "SIP|Animation")
+	UPROPERTY(Transient, BlueprintReadWrite, Category = "SIP|Animation")
 	FGameplayTagContainer ActiveAnimationStateTags;
 
-	// Z 说明：最近一次请求的动作标签，例如攻击请求或投掷请求
-	UPROPERTY(Transient, BlueprintReadOnly, Category = "SIP|Animation")
+	UPROPERTY(Transient, BlueprintReadWrite, Category = "SIP|Animation")
 	FGameplayTag LastRequestedActionTag;
+
+	UPROPERTY(Transient, BlueprintReadWrite, Category = "SIP|Animation")
+	FGameplayTag CurrentWeaponModuleTag;
+
+	UPROPERTY(Transient, BlueprintReadWrite, Category = "SIP|Animation")
+	FGameplayTag CurrentCastPhaseTag;
+
+	UPROPERTY(Transient, BlueprintReadWrite, Category = "SIP|Animation")
+	FGameplayTag CurrentCombatActionFamilyTag;
+
+	UPROPERTY(Transient, BlueprintReadWrite, Category = "SIP|Animation")
+	FGameplayTag CurrentCombatBodyStateTag;
+
+	UPROPERTY(Transient, BlueprintReadWrite, Category = "SIP|Animation|Combat")
+	FName CurrentCombatDesiredVariant = NAME_None;
+
+	UPROPERTY(Transient, BlueprintReadWrite, Category = "SIP|Animation|Combat")
+	bool bShouldUseMomentumWarpForCombatAction = false;
+
+	UPROPERTY(Transient, BlueprintReadWrite, Category = "SIP|Animation|Combat")
+	ESIPRecoveryBias CurrentCombatRecoveryBias = ESIPRecoveryBias::Fast;
+
+	UPROPERTY(Transient, BlueprintReadWrite, Category = "SIP|Animation|Combat")
+	ESIPChainWindowPolicy CurrentCombatChainWindowPolicy = ESIPChainWindowPolicy::Normal;
+
+	UPROPERTY(Transient, BlueprintReadWrite, Category = "SIP|Animation|Combat")
+	bool bIsFlaskRigCasting = false;
+
+	UPROPERTY(Transient, BlueprintReadWrite, Category = "SIP|Animation|Combat")
+	bool bIsIceRuneDaggerSlideAttack = false;
+
+	UPROPERTY(Transient, BlueprintReadWrite, Category = "SIP|Animation|Combat")
+	bool bIsIceRuneDaggerSlipRecovery = false;
+
+	UPROPERTY(Transient, BlueprintReadWrite, Category = "SIP|Animation|Combat")
+	bool bShouldEnableCombatAimOffset = true;
+
+	UPROPERTY(Transient, BlueprintReadWrite, Category = "SIP|Animation|Combat")
+	bool bShouldPreferCombatSteering = false;
+
+	UPROPERTY(Transient, BlueprintReadWrite, Category = "SIP|Animation|Combat")
+	float CombatSemanticLeanScale = 1.0f;
+
+	UPROPERTY(Transient, BlueprintReadWrite, Category = "SIP|Animation|Combat")
+	bool bShouldSuppressMotionMatching = false;
+
+	UPROPERTY(Transient, BlueprintReadWrite, Category = "SIP|Animation|Combat")
+	ESIPSemanticLocomotionMode SemanticLocomotionMode = ESIPSemanticLocomotionMode::Default;
+
+	UPROPERTY(Transient, BlueprintReadWrite, Category = "SIP|Animation|Combat")
+	FGameplayTag DesiredPoseSearchDatabaseTag;
 };

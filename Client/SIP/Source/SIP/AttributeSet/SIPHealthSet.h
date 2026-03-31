@@ -1,6 +1,5 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 /**
- * Z 说明：
  * USIPHealthSet 是角色的生命值属性集
  * 继承自 UAttributeSet，是 GAS 中用于存储和管理角色属性的核心类
  * 
@@ -23,7 +22,6 @@
 #include "SIPHealthSet.generated.h"
 
 /**
- * Z 说明：
  * USIPHealthSet 定义了角色的生命值相关属性
  * 包括：当前生命值、最大生命值、治疗量、移动速度
  * 
@@ -42,13 +40,11 @@ public:
 	USIPHealthSet();
 
 	/**
-	 * Z 说明：获取 AttributeSet 所在的 World
 	 * 某些功能需要获取 World（如播放特效、生成物体）
 	 */
 	UWorld* GetWorld() const override;
 	
 	/**
-	 * Z 说明：获取拥有此 AttributeSet 的 ASC
 	 * 用于在 AttributeSet 内部访问 ASC 进行操作
 	 */
 	UAbilitySystemComponent* GetOwningAbilitySystemComponent() const;
@@ -56,7 +52,6 @@ public:
 public:
 
 	/**
-	 * Z 说明：使用 GAS 宏生成属性 Getter 函数
 	 * 这些宏会自动生成 GetHealth()、GetMaxHealth() 等函数
 	 * 方便在其他代码中获取属性值
 	 */
@@ -65,24 +60,20 @@ public:
 	GAMEPLAYATTRIBUTE_PROPERTY_GETTER(USIPHealthSet, MaxHealth);
 	GAMEPLAYATTRIBUTE_PROPERTY_GETTER(USIPHealthSet, Healing);
 
-	// Z 说明：当前生命值（主属性）
 	// Primary Attribute
 	UPROPERTY(BlueprintReadOnly, Category = "SIP|Health", ReplicatedUsing = OnRep_Health)
 	FGameplayAttributeData Health;
 
-	// Z 说明：最大生命值（主属性）
 	// 影响：决定角色死亡线
 	UPROPERTY(BlueprintReadOnly, Category = "SIP|Health", ReplicatedUsing = OnRep_MaxHealth)
 	FGameplayAttributeData MaxHealth;
 
-	// Z 说明：治疗量（临时属性）
 	// 用途：GE 使用，标记即将治疗的血量
 	// 特性：会在 PostAttributeChange 中被消费（减为0）
 	// Clamped between 0 and MaxHealth
 	UPROPERTY(BlueprintReadOnly, Category = "SIP|Health", ReplicatedUsing = OnRep_Healing)
 	FGameplayAttributeData Healing;
 
-	// Z 说明：属性变化时的标签缓存
 	// 用于在 GE 回调中识别是哪个属性发生了变化
 	// Cache tags
 	FGameplayTag Tag_MaxHealthChanged;
@@ -91,13 +82,11 @@ public:
 protected:
 
 	/**
-	 * Z 说明：网络复制属性列表
 	 * 定义哪些属性需要复制到客户端
 	 */
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 	/**
-	 * Z 说明：属性基础值改变前的回调
 	 * @param Attribute - 改变的属性
 	 * @param NewValue - 新的属性值（可以修改）
 	 * 
@@ -107,7 +96,6 @@ protected:
 	virtual void PreAttributeBaseChange(const FGameplayAttribute& Attribute, float& NewValue) const override;
 	
 	/**
-	 * Z 说明：属性改变前的回调
 	 * @param Attribute - 改变的属性
 	 * @param NewValue - 新的属性值（可以修改）
 	 * 
@@ -116,7 +104,6 @@ protected:
 	virtual void PreAttributeChange(const FGameplayAttribute& Attribute, float& NewValue) override;
 	
 	/**
-	 * Z 说明：属性改变后的回调
 	 * @param Attribute - 改变的属性
 	 * @param OldValue - 旧值
 	 * @param NewValue - 新值
@@ -129,14 +116,12 @@ protected:
 	virtual void PostAttributeChange(const FGameplayAttribute& Attribute, float OldValue, float NewValue) override;
 
 	/**
-	 * Z 说明：属性钳制
 	 * 确保属性值在合法范围内
 	 * 如：生命值不能小于0，不能大于最大生命值
 	 */
 	virtual void ClampAttribute(const FGameplayAttribute& Attribute, float& NewValue) const;
 
 	/**
-	 * Z 说明：网络复制回调
 	 * 当客户端收到服务器复制的属性值时调用
 	 * 用于在客户端更新 UI 等
 	 */

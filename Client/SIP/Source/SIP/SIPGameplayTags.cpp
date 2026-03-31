@@ -1,6 +1,5 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 /**
- * Z 说明：
  * SIPGameplayTags.cpp 是 GameplayTag 的定义文件
  * 使用 UE_DEFINE_GAMEPLAY_TAG_COMMENT 宏定义所有标签
  * 
@@ -21,7 +20,6 @@
 namespace SIPGameplayTags
 {
 	// ==================== 输入标签 ====================
-	// Z 说明：输入相关标签，用于绑定输入事件到 Ability
 	// 这些标签与 InputConfig 配合，实现输入到技能的映射
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(InputTag_Move, "InputTag.Move", "Move input.");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(InputTag_Look_Mouse, "InputTag.Look.Mouse", "Look (mouse) input.");
@@ -39,12 +37,29 @@ namespace SIPGameplayTags
 	// InputTag_Look_Stick 的定义（原因：暂不支持手柄视角控制，后续需要时可重新添加）
 
 	// ==================== 状态标签 ====================
-	// Z 说明：角色状态标签，用于标记当前状态
 	// 使用场景：技能可以检查这些标签来决定是否激活或改变行为
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(State_Combat, "State.Combat", "Character is in combat presentation state.");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(State_Combat_Attacking, "State.Combat.Attacking", "Character is playing an attack action.");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(State_Combat_Throwing, "State.Combat.Throwing", "Character is playing a throw action.");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(State_Combat_Attack_HitWindow, "State.Combat.Attack.HitWindow", "Attack hit window is currently open.");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(State_Combat_Cast_PreCast, "State.Combat.Cast.PreCast", "Combat action is in the pre-cast or wind-up phase.");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(State_Combat_Cast_Release, "State.Combat.Cast.Release", "Combat action is in the release or hit phase.");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(State_Combat_Cast_Recover, "State.Combat.Cast.Recover", "Combat action is in the recovery phase.");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(State_Combat_WeaponModule_Unarmed, "State.Combat.WeaponModule.Unarmed", "Current combat expression uses the unarmed module profile.");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(State_Combat_WeaponModule_FlaskRig, "State.Combat.WeaponModule.FlaskRig", "Current combat expression uses the flask rig module profile.");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(State_Combat_WeaponModule_RuneDagger, "State.Combat.WeaponModule.RuneDagger", "Current combat expression uses the rune dagger module profile.");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(State_Combat_ActionFamily_SlideEntry, "State.Combat.ActionFamily.SlideEntry", "Combat action resolves to the ice rune dagger slide entry family.");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(State_Combat_ActionFamily_DriftSlash, "State.Combat.ActionFamily.DriftSlash", "Combat action resolves to the ice rune dagger drift slash family.");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(State_Combat_ActionFamily_DriftTurnSlash, "State.Combat.ActionFamily.DriftTurnSlash", "Combat action resolves to the ice rune dagger drift turn slash family.");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(State_Combat_ActionFamily_SlipRecovery, "State.Combat.ActionFamily.SlipRecovery", "Combat action resolves to the ice rune dagger slip recovery family.");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(State_Combat_ActionFamily_DelayedRestart, "State.Combat.ActionFamily.DelayedRestart", "Combat action resolves to the ice rune dagger delayed restart family.");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(State_Combat_ActionFamily_GlideExit, "State.Combat.ActionFamily.GlideExit", "Combat action resolves to the ice rune dagger glide exit family.");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(State_Combat_BodyState_SlideEntry, "State.Combat.BodyState.SlideEntry", "Current combat action enters through an ice-driven sliding attack state.");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(State_Combat_BodyState_SlipRecovery, "State.Combat.BodyState.SlipRecovery", "Current combat action is recovering from an ice-driven slipping motion.");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(State_Combat_BodyState_DriftSlash, "State.Combat.BodyState.DriftSlash", "Current combat action expresses a drifting slash body state.");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(State_Combat_BodyState_DriftTurn, "State.Combat.BodyState.DriftTurn", "Current combat action expresses a drift-assisted turning strike.");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(State_Combat_BodyState_DelayedRestart, "State.Combat.BodyState.DelayedRestart", "Current combat action is restarting from a delayed recovery state.");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(State_Combat_BodyState_GlideExit, "State.Combat.BodyState.GlideExit", "Current combat action is exiting a glide-driven combat chain.");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(State_Movement_Jumping, "State.Movement.Jumping", "Jumping state.");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(State_Movement_Aiming, "State.Movement.Aiming", "Character is currently aiming.");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(State_Movement_Strafing, "State.Movement.Strafing", "Character is currently strafing.");
@@ -61,12 +76,10 @@ namespace SIPGameplayTags
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Event_Animation_Throw_Release, "Event.Animation.Throw.Release", "Animation reached the projectile release frame.");
 
 	// ==================== 系统标签 ====================
-	// Z 说明：系统控制标签，用于全局控制
 	// 用途：通过 GE 可以禁止玩家输入，常用于被控制/眩晕等状态
 	UE_DEFINE_GAMEPLAY_TAG(TAG_Gameplay_AbilityInputBlocked, "Gameplay.AbilityInputBlocked");
 
 	// ==================== 生命值标签 ====================
-	// Z 说明：生命值系统标签
 	// 用途：GAS 中属性变化需要通过标签进行追踪和广播，便于 UI 和其他系统响应
 	// 使用场景：
 	// - Health.Changed: 血量变化时广播，UI 监听更新血条
@@ -80,7 +93,6 @@ namespace SIPGameplayTags
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(DeathStopped, "Death.Stopped", "Death has stopped (revive).");
 
 	// ==================== 生命力标签 ====================
-	// Z 说明：生命力/增益效果标签
 	// 用途：GE 通过标签来标识效果类型，便于技能系统分类管理
 	// 使用场景：
 	// - Vitality.Healing: 治疗效果，可叠加
@@ -118,13 +130,11 @@ namespace SIPGameplayTags
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Zone_Bloomed,     "Zone.Bloomed",     "Zone has bloomed - new resources spawned.");
 
 	// ==================== 冷却标签 ====================
-	// Z 说明：冷却时间标签
 	// 用途：标识技能的冷却状态
 	// 使用场景：加到对应的cooldown GE里，GA会自动检查这个标签来判断技能是否在冷却中
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Cooldown_Dash, "Cooldown.Dash", "Dash cooldown.");
 
 	// ==================== 标签查找函数 ====================
-	// Z 说明：运行时根据字符串查找标签
 	// 一般不使用，仅作备用（通过字符串动态获取标签）
 	FGameplayTag FindTagByString(const FString& TagString, bool bMatchPartialString)
 	{

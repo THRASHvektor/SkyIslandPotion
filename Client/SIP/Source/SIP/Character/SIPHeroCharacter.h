@@ -1,6 +1,5 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 /**
- * Z 说明：
  * ASIPHeroCharacter 是玩家控制的主角角色类
  * 继承自 ASIPCharacter，是玩家在游戏中实际控制的对象
  * 
@@ -19,6 +18,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Combat/SIPCombatSemanticResolver.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "SIPCharacter.h"
 #include "Character/Components/SIPSandboxLocomotionComponent.h"
@@ -30,6 +30,7 @@ class UCameraComponent;
 class UInteractionComponent;
 class UMotionWarpingComponent;
 class USIPHeroAnimationBridgeComponent;
+class USIPContextualCameraComponent;
 class UAnimInstance;
 class UInputMappingContext;
 class UGameplayEffect;
@@ -70,14 +71,12 @@ enum class ESIPSandboxStance : uint8
 
 
 /**
- * Z 说明：
  * TODO 注释：代码优化方向
  * 1. 目前先在角色类中直接绑定输入，后续最好通过输入组件的方式来实现
  * 2. 最好把玩家的操控独立成一个组件，方便随时切换操作对象（宠物、坐骑）
  */
 
 /**
- * Z 说明：
  * ASIPHeroCharacter 是玩家所操控的英雄类
  * 
  * 继承层次：
@@ -95,13 +94,11 @@ class ASIPHeroCharacter : public ASIPCharacter
 
 public:
 	/**
-	 * Z 说明：构造函数
 	 * 初始化组件和角色参数
 	 */
 	ASIPHeroCharacter(const FObjectInitializer& ObjectInitializer);
 
 	/**
-	 * Z 说明：摄像机臂组件
 	 * 用于控制第三人称视角的距离和旋转
 	 * 
 	 * 功能：
@@ -113,7 +110,6 @@ public:
 	USpringArmComponent* CameraBoom;
 
 	/**
-	 * Z 说明：跟随摄像机
 	 * 绑定到 CameraBoom，自动跟随角色
 	 * 
 	 * 特点：
@@ -124,7 +120,6 @@ public:
 	UCameraComponent* FollowCamera;
 
 	/**
-	 * Z 说明：交互组件
 	 * 用于处理与可交互对象的交互逻辑
 	 */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "SIP|Interaction", meta = (AllowPrivateAccess = "true"))
@@ -135,6 +130,9 @@ public:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "SIP|Animation", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<USIPHeroAnimationBridgeComponent> HeroAnimationBridgeComponent;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "SIP|Camera", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<USIPContextualCameraComponent> ContextualCameraComponent;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "SIP|Sandbox", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<USIPSandboxLocomotionComponent> SandboxLocomotionComponent;
@@ -196,8 +194,37 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "SIP|Sandbox|ThreadSafe", meta = (AllowPrivateAccess = "true"))
 	FVector LandVelocity = FVector::ZeroVector;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "SIP|Sandbox|ThreadSafe", meta = (AllowPrivateAccess = "true"))
+	FGameplayTag SandboxWeaponModuleTag;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "SIP|Sandbox|ThreadSafe", meta = (AllowPrivateAccess = "true"))
+	FGameplayTag SandboxCastPhaseTag;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "SIP|Sandbox|ThreadSafe", meta = (AllowPrivateAccess = "true"))
+	FGameplayTag SandboxCombatActionFamilyTag;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "SIP|Sandbox|ThreadSafe", meta = (AllowPrivateAccess = "true"))
+	FGameplayTag SandboxCombatBodyStateTag;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "SIP|Sandbox|ThreadSafe", meta = (AllowPrivateAccess = "true"))
+	FName SandboxCombatDesiredVariant = NAME_None;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "SIP|Sandbox|ThreadSafe", meta = (AllowPrivateAccess = "true"))
+	bool SandboxCombatUseMomentumWarp = false;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "SIP|Sandbox|ThreadSafe", meta = (AllowPrivateAccess = "true"))
+	ESIPRecoveryBias SandboxCombatRecoveryBias = ESIPRecoveryBias::Fast;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "SIP|Sandbox|ThreadSafe", meta = (AllowPrivateAccess = "true"))
+	ESIPChainWindowPolicy SandboxCombatChainWindowPolicy = ESIPChainWindowPolicy::Normal;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "SIP|Sandbox|ThreadSafe", meta = (AllowPrivateAccess = "true"))
+	bool SandboxShouldSuppressMotionMatching = false;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "SIP|Sandbox|ThreadSafe", meta = (AllowPrivateAccess = "true"))
+	ESIPSemanticLocomotionMode SandboxSemanticLocomotionMode = ESIPSemanticLocomotionMode::Default;
+
 	/**
-	 * Z 说明：主角动画原型预设。
 	 * 用于把主角运行时直接切到项目里现成的 Manny / Unarmed 资源链。
 	 * 是否压过显式 AnimBP Override，由 bPreferAnimationPrototypePreset 控制。
 	 */
@@ -205,7 +232,6 @@ public:
 	ESIPHeroAnimationPrototypePreset HeroAnimationPrototypePreset = ESIPHeroAnimationPrototypePreset::None;
 
 	/**
-	 * Z 说明：当动画原型预设有效时，是否优先使用预设资源而不是显式 AnimBP Override。
 	 * 开启后可以直接压过之前遗留的 BP_HeroAnimInstance 之类的临时承载蓝图，
 	 * 更适合当前“先把真原型跑起来”的阶段。
 	 */
@@ -213,21 +239,18 @@ public:
 	bool bPreferAnimationPrototypePreset = true;
 
 	/**
-	 * Z 说明：主角运行时要覆盖使用的 Skeletal Mesh。
 	 * 如果为空，则允许动画原型预设自动提供对应的 Mesh。
 	 */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "SIP|Animation", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<USkeletalMesh> HeroSkeletalMeshOverride;
 
 	/**
-	 * Z 说明：是否在运行时屏蔽模板默认动画蓝图
 	 * 开启后会自动移除 ABP_Quinn / ABP_Manny 这类模板遗留 AnimBP
 	 */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "SIP|Animation", meta = (AllowPrivateAccess = "true"))
 	bool bBlockTemplateAnimationBlueprints = true;
 
 	/**
-	 * Z 说明：主角运行时要使用的动画蓝图类
 	 * - 若设置，则会在运行时强制覆盖蓝图里继承下来的默认 AnimBP
 	 * - 若未设置且开启了模板屏蔽，则会直接清空模板 AnimBP
 	 */
@@ -235,21 +258,18 @@ public:
 	TSubclassOf<UAnimInstance> HeroAnimBlueprintClassOverride;
 
 	/**
-	 * Z 说明：是否允许“显式指定”的模板 AnimBP 作为合法 Override 生效。
 	 * 屏蔽模板的目的是避免蓝图残留误引用，不是阻止我们主动拿模板资源做原型。
 	 */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "SIP|Animation", meta = (AllowPrivateAccess = "true"))
 	bool bAllowExplicitTemplateAnimationBlueprintOverride = true;
 
 	/**
-	 * Z 说明：是否禁用 SkeletalMesh 自带的 Post Process Anim Blueprint
 	 * 开启后可一并切断 Quinn / Manny 网格上的默认后处理动画蓝图
 	 */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "SIP|Animation", meta = (AllowPrivateAccess = "true"))
 	bool bDisablePostProcessAnimationBlueprint = true;
 
 	/**
-	 * Z 说明：输入映射上下文
 	 * 来自 Enhanced Input 系统
 	 * 定义了按键到 InputAction 的映射
 	 * 
@@ -260,7 +280,6 @@ public:
 	UInputMappingContext* InputMappingContext;
 
 	/**
-	 * Z 说明：输入配置数据资产
 	 * 定义了 InputAction 到 GameplayTag 的映射
 	 * 
 	 * 作用：
@@ -271,16 +290,16 @@ public:
 	TObjectPtr<USIPInputConfig> InputConfig;
 
 	/**
-	 * Z 说明：获取摄像机臂组件
 	 */
 	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
 	
 	/**
-	 * Z 说明：获取跟随摄像机
 	 */
 	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
 
 	FORCEINLINE USIPHeroAnimationBridgeComponent* GetHeroAnimationBridgeComponent() const { return HeroAnimationBridgeComponent; }
+
+	FORCEINLINE USIPContextualCameraComponent* GetContextualCameraComponent() const { return ContextualCameraComponent; }
 
 	FORCEINLINE USIPSandboxLocomotionComponent* GetSandboxLocomotionComponent() const { return SandboxLocomotionComponent; }
 
@@ -316,6 +335,18 @@ public:
 	UFUNCTION(BlueprintPure, Category = "SIP|Sandbox")
 	bool ShouldUseSandboxControllerDesiredRotation() const;
 
+	int32 GetResolvedAttackComboIndex(float ResetWindowSeconds);
+
+	void CommitAttackComboIndex(int32 NextComboIndex);
+
+	void ResetAttackComboState();
+
+	void BufferAttackInput();
+
+	void ClearBufferedAttackInput();
+
+	bool ConsumeBufferedAttackInput(float MaxAgeSeconds);
+
 	UFUNCTION(BlueprintCallable, Category = "SIP|Sandbox")
 	void SetTraversalActive(bool bEnabled);
 
@@ -331,28 +362,24 @@ protected:
 
 
 	/**
-	 * Z 说明：技能输入按下回调
 	 * 当玩家按下技能按键时调用
 	 * 将 InputTag 传递给 ASC 进行处理
 	 */
 	void Input_AbilityInputTagPressed(FGameplayTag InputTag);
 
 	/**
-	 * Z 说明：技能输入释放回调
 	 * 当玩家释放技能按键时调用
 	 * 将 InputTag 传递给 ASC 进行处理
 	 */
 	void Input_AbilityInputTagReleased(FGameplayTag InputTag);
 	
 	/**
-	 * Z 说明：移动输入处理
 	 * 处理 WASD/手柄摇杆输入
 	 * 将输入转换为角色移动方向
 	 */
 	void Input_Move(const FInputActionValue& Value);
 
 	/**
-	 * Z 说明：视角输入处理
 	 * 处理鼠标移动/手柄右摇杆
 	 * 控制摄像机旋转
 	 */
@@ -370,20 +397,17 @@ protected:
 	void Input_CrouchReleased();
 
 	/**
-	 * Z 说明：设置输入组件
 	 * UE 生命周期函数
 	 * 在此绑定增强输入系统
 	 */
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 	/**
-	 * Z 说明：初始化组件
 	 * 在此授予角色技能
 	 */
 	virtual void PostInitializeComponents() override;
 	
 	/**
-	 * Z 说明：开始播放
 	 * 可以在此添加角色初始化逻辑
 	 */
 	virtual void BeginPlay();
@@ -393,18 +417,15 @@ protected:
 	virtual void Landed(const FHitResult& Hit) override;
 
 	/**
-	 * Z 说明：根据主角动画策略在运行时应用 AnimBP 覆盖或清理模板 ABP
 	 */
 	void ApplyHeroAnimationBlueprintPolicy();
 
 	/**
-	 * Z 说明：根据当前动画原型预设解析运行时要使用的 Mesh / AnimBP。
 	 * 这里只返回预设对应的资源，不覆盖蓝图里显式指定的 Override。
 	 */
 	bool ResolveHeroAnimationPrototypeAssets(USkeletalMesh*& OutSkeletalMesh, UClass*& OutAnimBlueprintClass) const;
 
 	/**
-	 * Z 说明：判断当前 AnimBP 是否属于模板默认动画蓝图
 	 */
 	bool IsTemplateAnimationBlueprintClass(const UClass* AnimClass) const;
 
@@ -414,6 +435,8 @@ protected:
 
 	uint64 LastSandboxStateSyncFrame = MAX_uint64;
 	bool bTraversalConsumedJumpInput = false;
-	bool bCachedCameraBoomCollisionTest = true;
-
+	int32 AttackComboIndex = 0;
+	double LastAttackComboTimeSeconds = -1.0;
+	bool bAttackInputBuffered = false;
+	double LastAttackInputBufferedTimeSeconds = -1.0;
 };

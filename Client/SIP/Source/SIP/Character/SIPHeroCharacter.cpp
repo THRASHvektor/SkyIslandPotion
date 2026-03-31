@@ -1,6 +1,5 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 /**
- * Z 说明：
  * SIPHeroCharacter.cpp 实现了玩家角色的核心功能
  * 
  * 主要功能：
@@ -30,6 +29,7 @@
 #include "Input/SIPInputComponent.h"
 #include "Controller/SIPPlayerController.h"
 #include "./Components/InteractionComponent.h"
+#include "./Components/SIPContextualCameraComponent.h"
 #include "./Components/SIPHeroAnimationBridgeComponent.h"
 #include "./Components/SIPSandboxLocomotionComponent.h"
 
@@ -85,7 +85,6 @@ namespace
 }
 
 /**
- * Z 说明：构造函数
  * 初始化角色组件和参数
  * 
  * 初始化内容：
@@ -99,77 +98,61 @@ ASIPHeroCharacter::ASIPHeroCharacter(const FObjectInitializer& ObjectInitializer
 {
 	PrimaryActorTick.bCanEverTick = true;
 	
-	// Z 说明：设置胶囊体碰撞体大小
 	// 标准人类角色大小：直径42，高96
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
 		
-	// Z 说明：控制器旋转设置
 	// 当该值为 false 时，控制器旋转不会直接带动角色旋转。
 	// 这样角色移动方向可以独立于摄像机方向
 	bUseControllerRotationPitch = false;
 	bUseControllerRotationYaw = false;
 	bUseControllerRotationRoll = false;
 
-	// Z 说明：角色移动配置
 	// 当 `bOrientRotationToMovement` 为 true 时，角色会自动转向移动方向。
 	// 这是第三人称游戏的常见设置
 	GetCharacterMovement()->bOrientRotationToMovement = true;
 	
-	// Z 说明：旋转速率
 	// 角色转向移动方向的速度
 	GetCharacterMovement()->RotationRate = FRotator(0.0f, 500.0f, 0.0f);
 
-	// Z 说明：跳跃参数
 	// 跳跃时的垂直速度
 	GetCharacterMovement()->JumpZVelocity = 700.f;
 	
-	// Z 说明：空中控制
 	// 在空中时对移动输入的响应程度（0-1）
 	// 0.35 表示在空中可以部分控制移动方向
 	GetCharacterMovement()->AirControl = 0.35f;
 	
-	// Z 说明：行走速度
 	// 正常行走时的最大速度
 	GetCharacterMovement()->MaxWalkSpeed = 500.f;
 	
-	// Z 说明：最小模拟行走速度
 	// 手柄摇杆推动时的最小速度
 	GetCharacterMovement()->MinAnalogWalkSpeed = 20.f;
 	
-	// Z 说明：行走减速
 	// 松开按键后停止的速度
 	GetCharacterMovement()->BrakingDecelerationWalking = 2000.f;
 	
-	// Z 说明：下落减速
 	// 空中移动停止时的减速
 	GetCharacterMovement()->BrakingDecelerationFalling = 1500.0f;
 
-	// Z 说明：创建摄像机臂组件
 	// 摄像机跟随的基础
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
 	CameraBoom->SetupAttachment(RootComponent);
 	
-	// Z 说明：摄像机距离
 	// 摄像机在角色后方400单位
 	CameraBoom->TargetArmLength = 400.0f;
 	
-	// Z 说明：使用控制器旋转
 	// 摄像机臂跟随控制器旋转（鼠标/手柄控制视角）
 	CameraBoom->bUsePawnControlRotation = true;
-	bCachedCameraBoomCollisionTest = CameraBoom->bDoCollisionTest;
 
-	// Z 说明：创建跟随摄像机
 	// 绑定到摄像机臂的插槽
 	FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
 	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
 	
-	// Z 说明：不使用控制器旋转
 	// 摄像机不独立旋转，只跟随臂移动
 	FollowCamera->bUsePawnControlRotation = false;
 
-	// Z 说明：创建交互组件
 	InteractionComponent = CreateDefaultSubobject<UInteractionComponent>(TEXT("InteractionComponent"));
 	HeroAnimationBridgeComponent = CreateDefaultSubobject<USIPHeroAnimationBridgeComponent>(TEXT("HeroAnimationBridgeComponent"));
+	ContextualCameraComponent = CreateDefaultSubobject<USIPContextualCameraComponent>(TEXT("ContextualCameraComponent"));
 	
 	// Z 变更说明：MotionWarping 统一为单一权威引用。
 	// 之前代码里出现过同一组件的双字段镜像，后续蓝图/代码若分别读写不同字段，
@@ -234,21 +217,8 @@ bool ASIPHeroCharacter::ShouldUseSandboxControllerDesiredRotation() const
 
 void ASIPHeroCharacter::SetTraversalActive(const bool bEnabled)
 {
-	// Z 变更说明：Traversal 期间关闭 CameraBoom 碰撞测试，避免贴边攀爬时镜头被墙体挤压。
-	// 进入 Traversal 时缓存原始开关，退出后恢复，保证该逻辑对其他状态“可逆”。
-	if (CameraBoom)
-	{
-		if (bEnabled)
-		{
-			bCachedCameraBoomCollisionTest = CameraBoom->bDoCollisionTest;
-			CameraBoom->bDoCollisionTest = false;
-		}
-		else
-		{
-			CameraBoom->bDoCollisionTest = bCachedCameraBoomCollisionTest;
-		}
-	}
-
+	// Traversal 只在这里发布移动语义。
+	// 镜头上下文和碰撞策略改由 ContextualCameraComponent 根据同一份状态统一求解。
 	if (SandboxLocomotionComponent)
 	{
 		SandboxLocomotionComponent->SetTraversalActive(bEnabled);
@@ -269,6 +239,64 @@ bool ASIPHeroCharacter::TryConsumeJumpForTraversal_Implementation()
 	// 蓝图 `BP_ThirdPersonCharacter_Sandbox` 会覆盖此入口，并在检测成功时返回 true，
 	// 从而阻断普通 Jump，改走 Traversal 动作链。
 	return false;
+}
+
+int32 ASIPHeroCharacter::GetResolvedAttackComboIndex(const float ResetWindowSeconds)
+{
+	const UWorld* World = GetWorld();
+	const double CurrentTimeSeconds = World ? World->GetTimeSeconds() : 0.0;
+	if (LastAttackComboTimeSeconds < 0.0 || (CurrentTimeSeconds - LastAttackComboTimeSeconds) > ResetWindowSeconds)
+	{
+		AttackComboIndex = 0;
+	}
+
+	return FMath::Max(AttackComboIndex, 0);
+}
+
+void ASIPHeroCharacter::CommitAttackComboIndex(const int32 NextComboIndex)
+{
+	AttackComboIndex = FMath::Max(NextComboIndex, 0);
+	if (const UWorld* World = GetWorld())
+	{
+		LastAttackComboTimeSeconds = World->GetTimeSeconds();
+	}
+}
+
+void ASIPHeroCharacter::ResetAttackComboState()
+{
+	AttackComboIndex = 0;
+	LastAttackComboTimeSeconds = -1.0;
+}
+
+void ASIPHeroCharacter::BufferAttackInput()
+{
+	bAttackInputBuffered = true;
+	if (const UWorld* World = GetWorld())
+	{
+		LastAttackInputBufferedTimeSeconds = World->GetTimeSeconds();
+	}
+}
+
+void ASIPHeroCharacter::ClearBufferedAttackInput()
+{
+	bAttackInputBuffered = false;
+	LastAttackInputBufferedTimeSeconds = -1.0;
+}
+
+bool ASIPHeroCharacter::ConsumeBufferedAttackInput(const float MaxAgeSeconds)
+{
+	if (!bAttackInputBuffered)
+	{
+		return false;
+	}
+
+	const UWorld* World = GetWorld();
+	const double CurrentTimeSeconds = World ? World->GetTimeSeconds() : 0.0;
+	const bool bIsValid = LastAttackInputBufferedTimeSeconds >= 0.0 &&
+		(CurrentTimeSeconds - LastAttackInputBufferedTimeSeconds) <= MaxAgeSeconds;
+
+	ClearBufferedAttackInput();
+	return bIsValid;
 }
 
 void ASIPHeroCharacter::RefreshSandboxThreadSafeState()
@@ -301,6 +329,14 @@ void ASIPHeroCharacter::RefreshSandboxThreadSafeState()
 	SandboxUseControllerDesiredRotation = bUseControllerDesiredRotation;
 	SandboxRotationMode = bUseControllerDesiredRotation ? ESIPSandboxRotationMode::ControllerDesired : ESIPSandboxRotationMode::OrientToMovement;
 	SandboxStance = bIsCrouched ? ESIPSandboxStance::Crouching : ESIPSandboxStance::Standing;
+	SandboxWeaponModuleTag = FGameplayTag();
+	SandboxCastPhaseTag = FGameplayTag();
+	SandboxCombatActionFamilyTag = FGameplayTag();
+	SandboxCombatBodyStateTag = FGameplayTag();
+	SandboxCombatDesiredVariant = NAME_None;
+	SandboxCombatUseMomentumWarp = false;
+	SandboxCombatRecoveryBias = ESIPRecoveryBias::Fast;
+	SandboxCombatChainWindowPolicy = ESIPChainWindowPolicy::Normal;
 
 	if (SandboxLocomotionComponent)
 	{
@@ -325,6 +361,21 @@ void ASIPHeroCharacter::RefreshSandboxThreadSafeState()
 		SandboxDesiredMaxWalkSpeed = MovementComponent ? MovementComponent->MaxWalkSpeed : 0.0f;
 	}
 
+	if (HeroAnimationBridgeComponent)
+	{
+		const FSIPCombatActionDescriptor CombatDescriptor = HeroAnimationBridgeComponent->GetCurrentCombatActionDescriptor();
+		SandboxWeaponModuleTag = HeroAnimationBridgeComponent->GetCurrentWeaponModuleTag();
+		SandboxCastPhaseTag = HeroAnimationBridgeComponent->GetCurrentCastPhaseTag();
+		SandboxCombatActionFamilyTag = CombatDescriptor.ActionFamilyTag;
+		SandboxCombatBodyStateTag = HeroAnimationBridgeComponent->GetCurrentCombatBodyStateTag();
+		SandboxCombatDesiredVariant = CombatDescriptor.DesiredVariant;
+		SandboxCombatUseMomentumWarp = CombatDescriptor.bUseMomentumWarp;
+		SandboxCombatRecoveryBias = CombatDescriptor.RecoveryBias;
+		SandboxCombatChainWindowPolicy = CombatDescriptor.ChainWindowPolicy;
+		SandboxShouldSuppressMotionMatching = HeroAnimationBridgeComponent->ShouldSuppressMotionMatching();
+		SandboxSemanticLocomotionMode = HeroAnimationBridgeComponent->GetSemanticLocomotionMode();
+	}
+
 	if (SandboxTraversalActive)
 	{
 		SandboxMovementState = ESIPSandboxMovementState::Traversal;
@@ -345,7 +396,6 @@ void ASIPHeroCharacter::ClearJustLandedFlag()
 }
 
 /**
- * Z 说明：BeginPlay
  * 角色开始游戏时调用
  * 调用基类的 BeginPlay
  */
@@ -378,13 +428,11 @@ void ASIPHeroCharacter::Landed(const FHitResult& Hit)
 }
 
 /**
- * Z 说明：PostInitializeComponents
  * 组件初始化完成后调用
  * 在此初始化技能系统
  */
 void ASIPHeroCharacter::PostInitializeComponents()
 {
-	// Z 说明：调用基类初始化
 	Super::PostInitializeComponents();
 	// Z 变更说明：在组件初始化后再次应用动画策略，覆盖父类/模板遗留默认值。
 	// 这么做是为了兼容不同构造路径（编辑器预览、热重载、运行时 Spawn）。
@@ -401,7 +449,6 @@ void ASIPHeroCharacter::PostInitializeComponents()
 }
 
 /**
- * Z 说明：SetupPlayerInputComponent
  * 设置输入组件，绑定增强输入系统
  * 
  * 绑定流程：
@@ -411,7 +458,6 @@ void ASIPHeroCharacter::PostInitializeComponents()
  * 4. 绑定技能输入
  */
 /**
- * Z 说明：ApplyHeroAnimationBlueprintPolicy
  * 运行时统一处理主角动画蓝图策略：
  * 1. 先禁用 SkeletalMesh 上的默认 Post Process Anim Blueprint
  * 2. 如果配置了自定义 AnimBP，则强制切换到该类
@@ -511,11 +557,9 @@ void ASIPHeroCharacter::ApplyHeroAnimationBlueprintPolicy()
 }
 
 /**
- * Z 说明：IsTemplateAnimationBlueprintClass
  * 用于识别项目里仍然残留的模板默认动画蓝图
  */
 /**
- * Z 说明：把“动画原型预设”解析成可直接在运行时应用的资源。
  * 这里专门做成代码解析，是为了让主角蓝图只切一个枚举就能看到 Manny / Unarmed 原型，
  * 不需要再手工逐个改 Mesh、AnimBP 和相关运行时策略。
  */
@@ -558,7 +602,6 @@ bool ASIPHeroCharacter::IsTemplateAnimationBlueprintClass(const UClass* AnimClas
 	return AnimClass && IsKnownTemplateAnimBlueprintPath(AnimClass->GetPathName());
 }
 /**
- * Z 说明：SetupPlayerInputComponent
  * 设置输入组件，绑定增强输入系统
  * 
  * 绑定流程：
@@ -569,15 +612,12 @@ bool ASIPHeroCharacter::IsTemplateAnimationBlueprintClass(const UClass* AnimClas
  */
 void ASIPHeroCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
-	// Z 说明：获取玩家控制器
 	APlayerController* PlayerController = Cast<APlayerController>(GetController());
 	check(PlayerController);
 
-	// Z 说明：获取增强输入子系统
 	UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer());
 	check(Subsystem);
 
-	// Z 说明：清除旧映射，添加新映射
 	Subsystem->ClearAllMappings();
 	Subsystem->AddMappingContext(InputMappingContext, 0);
 
@@ -630,12 +670,12 @@ void ASIPHeroCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCo
 		}
 	}
 	
-	// // Z 说明：绑定增强输入组件
+
 	// if (UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(PlayerInputComponent))
 	// {
 	// 	if (InputConfig)
 	// 	{
-	// 		// Z 说明：绑定移动输入
+
 	// 		EnhancedInputComponent->BindAction(
 	// 			InputConfig->FindNativeInputActionForTag(SIPGameplayTags::InputTag_Move),
 	// 			ETriggerEvent::Triggered,
@@ -643,7 +683,7 @@ void ASIPHeroCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCo
 	// 			&ASIPHeroCharacter::Input_Move
 	// 		);
 	//
-	// 		// Z 说明：绑定视角输入
+
 	// 		EnhancedInputComponent->BindAction(
 	// 			InputConfig->FindNativeInputActionForTag(SIPGameplayTags::InputTag_Look_Mouse),
 	// 			ETriggerEvent::Triggered,
@@ -651,12 +691,12 @@ void ASIPHeroCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCo
 	// 			&ASIPHeroCharacter::Input_Look
 	// 		);
 	//
-	// 		// Z 说明：绑定技能输入
+
 	// 		// 遍历 AbilityInputActions，绑定每个技能输入
 	// 		TArray<uint32> BindHandles;
 	// 		for (const FSIPInputAction& Action : InputConfig->AbilityInputActions)
 	// 		{
-	// 			// Z 说明：按下时激活技能（Started）
+
 	// 			BindHandles.Add(
 	// 				EnhancedInputComponent->BindAction(
 	// 					Action.InputAction,
@@ -667,7 +707,7 @@ void ASIPHeroCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCo
 	// 				).GetHandle()
 	// 			);
 	//
-	// 			// Z 说明：松开时取消技能（Completed）
+
 	// 			BindHandles.Add(
 	// 				EnhancedInputComponent->BindAction(
 	// 					Action.InputAction,
@@ -690,10 +730,7 @@ void ASIPHeroCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCo
 	// }
 }
 
-
-
 /**
- * Z 说明：Input_Move
  * 处理移动输入
  * 
  * 输入处理流程：
@@ -709,23 +746,18 @@ void ASIPHeroCharacter::Input_Move(const FInputActionValue& Value)
 		return;
 	}
 
-	// Z 说明：获取二维输入向量
 	FVector2D MovementVector = Value.Get<FVector2D>();
 
 	if (Controller != nullptr)
 	{
-		// Z 说明：获取控制器旋转（Yaw，只关心水平方向）
 		const FRotator Rotation = Controller->GetControlRotation();
 		const FRotator YawRotation(0, Rotation.Yaw, 0);
 
-		// Z 说明：获取前方向量
 		// 根据 Yaw 旋转，计算世界坐标中的"前方"
 		const FVector ForwardDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
 	
-		// Z 说明：获取右方向量
 		const FVector RightDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
 
-		// Z 说明：应用移动输入
 		// Y 对应前后方向，X 对应左右方向。
 		AddMovementInput(ForwardDirection, MovementVector.Y);
 		AddMovementInput(RightDirection, MovementVector.X);
@@ -733,7 +765,6 @@ void ASIPHeroCharacter::Input_Move(const FInputActionValue& Value)
 }
 
 /**
- * Z 说明：Input_Look
  * 处理视角输入
  * 
  * 输入处理：
@@ -742,12 +773,10 @@ void ASIPHeroCharacter::Input_Move(const FInputActionValue& Value)
  */
 void ASIPHeroCharacter::Input_Look(const FInputActionValue& Value)
 {
-	// Z 说明：获取二维视角输入
 	FVector2D LookAxisVector = Value.Get<FVector2D>();
 
 	if (Controller != nullptr)
 	{
-		// Z 说明：添加视角输入
 		// X 控制左右转向，Y 控制上下视角。
 		AddControllerYawInput(LookAxisVector.X);
 		AddControllerPitchInput(LookAxisVector.Y);
@@ -755,7 +784,6 @@ void ASIPHeroCharacter::Input_Look(const FInputActionValue& Value)
 }
 
 /**
- * Z 说明：Input_WalkPressed / Released
  * 把慢走意图同步到 SandboxLocomotionComponent，
  * 让主角在保留 SIP 输入链的前提下切入 sandbox locomotion 的 gait 语义。
  */
@@ -776,7 +804,6 @@ void ASIPHeroCharacter::Input_WalkReleased()
 }
 
 /**
- * Z 说明：Input_SprintPressed / Released
  * 这里只维护 locomotion 的冲刺意图；
  * 真正的移动速度增益仍由 GAS 的 Sprint Ability 负责。
  */
@@ -797,7 +824,6 @@ void ASIPHeroCharacter::Input_SprintReleased()
 }
 
 /**
- * Z 说明：Input_AimPressed / Released
  * 先通过桥接组件把瞄准/平移意图喂回 CharacterMovement 和 ASC loose tag，
  * 后面蓝图再拿这些状态去驱动 sandbox 的转向、分层和姿态选择。
  */
@@ -834,7 +860,6 @@ void ASIPHeroCharacter::Input_StrafeReleased()
 }
 
 /**
- * Z 说明：Input_CrouchPressed / Released
  * 当前先做成按下/松开驱动 crouch 的轻接入版本，
  * 这样不会破坏现有 SIP 主角链，后面要改成 sandbox 原版策略时也只需要收口到组件内。
  */
@@ -855,7 +880,6 @@ void ASIPHeroCharacter::Input_CrouchReleased()
 }
 
 /**
- * Z 说明：Input_AbilityInputTagPressed
  * 技能输入按下回调
  * 
  * 流程：
@@ -866,6 +890,11 @@ void ASIPHeroCharacter::Input_CrouchReleased()
 void ASIPHeroCharacter::Input_AbilityInputTagPressed(FGameplayTag InputTag)
 {
 	UE_LOG(LogSIPCharacter, Log, TEXT("Input_AbilityInputTagPressed: %s"), *InputTag.ToString());
+
+	if (InputTag.MatchesTagExact(SIPGameplayTags::InputTag_Attack))
+	{
+		BufferAttackInput();
+	}
 
 	if (InputTag.MatchesTagExact(SIPGameplayTags::InputTag_Jump) && TryConsumeJumpForTraversal())
 	{
@@ -881,7 +910,6 @@ void ASIPHeroCharacter::Input_AbilityInputTagPressed(FGameplayTag InputTag)
 }
 
 /**
- * Z 说明：Input_AbilityInputTagReleased
  * 技能输入释放回调
  * 
  * 流程：

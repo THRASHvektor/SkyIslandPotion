@@ -1,6 +1,5 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 /**
- * Z 说明：
  * ASIPCharacter 是项目中的角色基类
  * 继承自 ACharacter（UE 的角色基类），并实现了 IAbilitySystemInterface
  * 
@@ -34,7 +33,6 @@ struct FGameplayAbilitySpec;
 struct FTimerHandle;
 
 /**
- * Z 说明：
  * ASIPCharacter 是所有可交互游戏角色的基类
  * 
  * 主要功能：
@@ -54,7 +52,6 @@ public:
 	ASIPCharacter(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
 
 	/**
-	 * Z 说明：实现 IAbilitySystemInterface 接口
 	 * 返回角色的 AbilitySystemComponent
 	 * 
 	 * 重要：这是 GAS 系统的核心接口
@@ -64,14 +61,12 @@ public:
 	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
 
 	/**
-	 * Z 说明：获取项目自定义的 ASC
 	 * 返回 USIPAbilitySystemComponent 类型
 	 * 提供比基类更具体的功能
 	 */
 	USIPAbilitySystemComponent* GetSIPAbilitySystemComponent() const;
 
 	/**
-	 * Z 说明：获取角色的生命值属性集
 	 * 返回 USIPHealthSet 实例
 	 * 用于读取/修改角色的生命值
 	 * 
@@ -92,7 +87,6 @@ public:
 	void HandleRevived();
 
 	/**
-	 * Z 说明：角色的技能集列表
 	 * 每个 AbilitySet 包含一组技能、属性、被动效果
 	 * 在 PostInitializeComponents 中会被授予给角色
 	 * 
@@ -105,7 +99,6 @@ public:
 	TArray<TObjectPtr<USIPAbilitySet>> AbilitySets;
 
 	/**
-	 * Z 说明：死亡回调函数
 	 * 当角色死亡时调用
 	 * 可以在这里处理：停止移动、播放死亡动画、销毁等
 	 */
@@ -116,7 +109,6 @@ public:
 	void K2_OnDeath();
 	
 	/**
-	 * Z 说明：开始死亡回调
 	 * 在死亡动画开始时调用
 	 */
 	virtual void OnDeathStarted();
@@ -125,7 +117,6 @@ public:
 	void K2_OnDeathStarted();
 	
 	/**
-	 * Z 说明：死亡结束（复活）回调
 	 * 在死亡动画结束或角色复活时调用
 	 */
 	virtual void OnDeathStopped();
@@ -136,7 +127,6 @@ public:
 protected:
 
 	/**
-	 * Z 说明：BeginPlay 是 UE 的生命周期函数
 	 * 角色开始游戏时调用
 	 * 这里可以添加初始逻辑
 	 */
@@ -144,7 +134,6 @@ protected:
 	virtual void BeginPlay();
 
 	/**
-	 * Z 说明：PostInitializeComponents 是 UE 的生命周期函数
 	 * 在所有组件初始化完成后调用
 	 * 
 	 * 重要：这里是我们初始化 ASC 和授予技能的时机
@@ -161,7 +150,6 @@ protected:
 	
 protected:
 	/**
-	 * Z 说明：AbilitySystemComponent 组件
 	 * 这是 GAS 的核心组件
 	 * 负责管理所有技能和属性
 	 * 

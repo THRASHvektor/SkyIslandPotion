@@ -7,7 +7,6 @@
 #include "CollectableHintWidget.generated.h"
 
 /**
- * Z 说明：
  * 可收集物聚焦时使用的轻量提示控件封装。
  * 物品侧只需要提供文本内容，具体表现交给 Widget 蓝图处理。
  */

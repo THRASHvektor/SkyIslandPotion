@@ -54,6 +54,9 @@
 			"Name": "RigLogic",
 			"Enabled": true
 		},
-		
+		{
+			"Name": "SoftUEBridge",
+			"Enabled": true
+		}
 	]
 }

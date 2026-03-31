@@ -1,6 +1,5 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 /**
- * Z 说明：
  * SIPGameplayTags 定义了项目中使用的所有 GameplayTag
  * 
  * 什么是 GameplayTag？
@@ -28,18 +27,15 @@
 #include "NativeGameplayTags.h"
 
 /**
- * Z 说明：
  * SIPGameplayTags 是标签命名空间
  * 使用 UE_DECLARE_GAMEPLAY_TAG_EXTERN 声明标签
  * 使用 UE_DEFINE_GAMEPLAY_TAG_COMMENT 定义标签
  */
 namespace SIPGameplayTags
 {
-	// Z 说明：运行时根据字符串查找标签（一般不用，仅作备用）
 	SIP_API	FGameplayTag FindTagByString(const FString& TagString, bool bMatchPartialString = false);
 
 	// ==================== 输入标签 ====================
-	// Z 说明：输入相关标签，用于绑定输入事件到 Ability
 	// 这些标签与 InputConfig 中的 FSIPInputAction 配合使用
 	// 数据流：按键按下 → InputAction → InputTag → 激活 Ability
 	SIP_API	UE_DECLARE_GAMEPLAY_TAG_EXTERN(InputTag_Move);
@@ -58,12 +54,29 @@ namespace SIPGameplayTags
 	// 删除注释：InputTag_Look_Stick（暂不支持手柄视角，留作后续扩展）
 
 	// ==================== 状态标签 ====================
-	// Z 说明：角色状态标签，用于标记当前状态
 	// 使用场景：技能可以检查这些标签来决定是否激活
 	SIP_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Combat);
 	SIP_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Combat_Attacking);
 	SIP_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Combat_Throwing);
 	SIP_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Combat_Attack_HitWindow);
+	SIP_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Combat_Cast_PreCast);
+	SIP_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Combat_Cast_Release);
+	SIP_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Combat_Cast_Recover);
+	SIP_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Combat_WeaponModule_Unarmed);
+	SIP_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Combat_WeaponModule_FlaskRig);
+	SIP_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Combat_WeaponModule_RuneDagger);
+	SIP_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Combat_ActionFamily_SlideEntry);
+	SIP_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Combat_ActionFamily_DriftSlash);
+	SIP_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Combat_ActionFamily_DriftTurnSlash);
+	SIP_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Combat_ActionFamily_SlipRecovery);
+	SIP_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Combat_ActionFamily_DelayedRestart);
+	SIP_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Combat_ActionFamily_GlideExit);
+	SIP_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Combat_BodyState_SlideEntry);
+	SIP_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Combat_BodyState_SlipRecovery);
+	SIP_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Combat_BodyState_DriftSlash);
+	SIP_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Combat_BodyState_DriftTurn);
+	SIP_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Combat_BodyState_DelayedRestart);
+	SIP_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Combat_BodyState_GlideExit);
 	SIP_API	UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Movement_Jumping);
 	SIP_API	UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Movement_Aiming);
 	SIP_API	UE_DECLARE_GAMEPLAY_TAG_EXTERN(State_Movement_Strafing);
@@ -81,13 +94,11 @@ namespace SIPGameplayTags
 
 
 	// ==================== 系统标签 ====================
-	// Z 说明：系统控制标签，用于全局控制
 	// 用途：通过 GE 可以禁止玩家输入，常用于被控制/眩晕等状态
 	// 使用方式：GE 添加此标签 → ASC 禁止所有技能输入
 	SIP_API	UE_DECLARE_GAMEPLAY_TAG_EXTERN(TAG_Gameplay_AbilityInputBlocked);
 
 	// ==================== 生命值标签 ====================
-	// Z 说明：生命值系统标签
 	// 用途：GAS 中属性变化需要通过标签进行追踪和广播，便于 UI 和其他系统响应
 	// 使用场景：
 	// - Health.Changed: 血量变化时广播，UI 监听更新血条
@@ -101,7 +112,6 @@ namespace SIPGameplayTags
 	SIP_API	UE_DECLARE_GAMEPLAY_TAG_EXTERN(DeathStopped);        // 复活（死亡结束）
 
 	// ==================== 生命力标签 ====================
-	// Z 说明：生命力/增益效果标签
 	// 用途：GE 通过标签来标识效果类型，便于技能系统分类管理
 	// 使用场景：
 	// - Vitality.Healing: 治疗效果，可叠加（如装备回血+技能回血）
@@ -146,7 +156,6 @@ namespace SIPGameplayTags
 	SIP_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Zone_Bloomed);       // 绽放状态
 
 	// ==================== 冷却标签 ====================
-	// Z 说明：冷却时间标签
 	// 用途：标识技能的冷却状态
 	// 使用场景：加到对应的cooldown GE里，GA会自动检查这个标签来判断技能是否在冷却中
 	SIP_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Cooldown_Dash);

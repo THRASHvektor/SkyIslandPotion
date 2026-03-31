@@ -1,6 +1,5 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 /**
- * Z 说明：
  * ASIPElementalZoneActor 是放置在关卡中的元素区域标记 Actor
  *
  * 工作原理：

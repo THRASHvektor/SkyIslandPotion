@@ -3,7 +3,6 @@
 #include "SIPGameplayAbility.h"
 
 /**
- * Z 说明：
  * ProcessAbilityInput 是技能系统输入处理的核心函数
  * 它在角色的 Tick 中被调用，负责：
  * 1. 检查输入是否被屏蔽（如被眩晕时）
@@ -20,7 +19,6 @@ USIPAbilitySystemComponent::USIPAbilitySystemComponent(const FObjectInitializer&
 
 void USIPAbilitySystemComponent::ProcessAbilityInput(float DeltaTime, bool bGamePaused)
 {
-    // Z 说明：检查全局输入屏蔽标签
     // 如果有 GE（如眩晕、冰冻）添加了此标签，则禁止所有技能输入
 	if (HasMatchingGameplayTag(SIPGameplayTags::TAG_Gameplay_AbilityInputBlocked))
 	{
@@ -34,7 +32,6 @@ void USIPAbilitySystemComponent::ProcessAbilityInput(float DeltaTime, bool bGame
 	static TArray<FGameplayAbilitySpecHandle> AbilitiesToActivate;
 	AbilitiesToActivate.Reset();
 
-	// Z 说明：第一步 - 处理按住状态的技能
     // 只有 ActivationPolicy == WhileInputActive 的技能才会在持续按住时重复激活
     // OnInputTriggered 的技能（Attack/Dash等）不走此分支，避免每帧重复尝试激活
 	for (const FGameplayAbilitySpecHandle& SpecHandle : InputHeldSpecHandles)
@@ -52,7 +49,6 @@ void USIPAbilitySystemComponent::ProcessAbilityInput(float DeltaTime, bool bGame
 		}
 	}
 
-	// Z 说明：第二步 - 处理按下瞬间的技能
     // 遍历此帧按下的输入，设置 InputPressed 标志并尝试激活
 	for (const FGameplayAbilitySpecHandle& SpecHandle : InputPressedSpecHandles)
 	{
@@ -77,7 +73,6 @@ void USIPAbilitySystemComponent::ProcessAbilityInput(float DeltaTime, bool bGame
 		}
 	}
 
-	// Z 说明：第三步 - 批量激活技能
     // 为什么要批量激活？
     // 避免按住输入时，激活技能的同时又发送输入事件导致重复处理
 	for (const FGameplayAbilitySpecHandle& AbilitySpecHandle : AbilitiesToActivate)
@@ -85,7 +80,6 @@ void USIPAbilitySystemComponent::ProcessAbilityInput(float DeltaTime, bool bGame
 		TryActivateAbility(AbilitySpecHandle);
 	}
 
-	// Z 说明：第四步 - 处理松开输入
     // 通知正在激活的 Ability 输入已释放
 	for (const FGameplayAbilitySpecHandle& SpecHandle : InputReleasedSpecHandles)
 	{
@@ -110,14 +104,12 @@ void USIPAbilitySystemComponent::ProcessAbilityInput(float DeltaTime, bool bGame
 		}
 	}
 
-	// Z 说明：第五步 - 清理缓存
     // 清空此帧的输入缓存，等待下一帧重新收集
 	InputPressedSpecHandles.Reset();
 	InputReleasedSpecHandles.Reset();
 }
 
 /**
- * Z 说明：
  * AbilityInputTagPressed 是输入绑定系统的核心函数
  * 当玩家按下与技能绑定的输入键时，Enhanced Input 系统会调用此函数
  * 
@@ -147,7 +139,6 @@ void USIPAbilitySystemComponent::AbilityInputTagPressed(const FGameplayTag& Inpu
 }
 
 /**
- * Z 说明：
  * AbilityInputTagReleased 与 AbilityInputTagPressed 对应
  * 当玩家松开输入键时调用
  * 
@@ -173,7 +164,6 @@ void USIPAbilitySystemComponent::AbilityInputTagReleased(const FGameplayTag& Inp
 }
 
 /**
- * Z 说明：
  * AbilitySpecInputPressed 重写父类函数
  * 当 AbilitySpec 的输入状态改变时，通知 Ability 本身
  * 
@@ -193,7 +183,6 @@ void USIPAbilitySystemComponent::AbilitySpecInputPressed(FGameplayAbilitySpec& S
 }
 
 /**
- * Z 说明：
  * AbilitySpecInputReleased 重写父类函数
  * 当 AbilitySpec 的输入释放时，通知 Ability 本身
  * 
