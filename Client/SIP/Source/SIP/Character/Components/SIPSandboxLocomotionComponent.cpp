@@ -139,16 +139,35 @@ void USIPSandboxLocomotionComponent::HandleCrouchReleased()
 	SyncOwnerAnimationState();
 }
 
+void USIPSandboxLocomotionComponent::HandleExternalSemanticStateChanged()
+{
+	RefreshRotationMode();
+	RefreshWalkSpeedOverride();
+	SyncOwnerAnimationState();
+}
+
 // 只有瞄准、横移和 Traversal 这几种状态需要使用控制器朝向。
+/**
+ * 判断当前是否应该使用控制器朝向。
+ *
+ * 不只是显式的瞄准 / 横移模式会走这里，
+ * 那些需要更明确战斗转向感的语义攻击状态也会走这里，
+ * 否则它们会被普通移动转向规则稀释掉。
+ */
 bool USIPSandboxLocomotionComponent::ShouldUseControllerDesiredRotation() const
 {
-	return bAimIntent || bStrafeIntent || bTraversalActive;
+	return bAimIntent || bStrafeIntent || bTraversalActive || IsFlaskRigCasting() || IsIceRuneDaggerCombatSteeringActive();
 }
 
 // 步行优先级高于冲刺，因为它代表更保守的速度请求。
 ESIPSandboxDesiredGait USIPSandboxLocomotionComponent::GetDesiredGait() const
 {
 	if (bWalkIntent)
+	{
+		return ESIPSandboxDesiredGait::Walk;
+	}
+
+	if (IsFlaskRigCasting())
 	{
 		return ESIPSandboxDesiredGait::Walk;
 	}
@@ -214,11 +233,16 @@ void USIPSandboxLocomotionComponent::RefreshRotationMode()
 	}
 
 	const bool bUseControllerDesiredRotation = ShouldUseControllerDesiredRotation();
-	const float RotationRateMultiplier = bIceSurfaceActive ? IceRotationRateMultiplier : 1.0f;
+	const bool bUseIceCombatRotationRate = IsIceRuneDaggerCombatSteeringActive();
+	const float RotationRateMultiplier = (bIceSurfaceActive && !bUseIceCombatRotationRate) ? IceRotationRateMultiplier : 1.0f;
+	const FRotator BaseRotationRate =
+		bUseIceCombatRotationRate
+			? IceCombatRotationRate
+			: (bUseControllerDesiredRotation ? StrafeRotationRate : MovementRotationRate);
 	Character->bUseControllerRotationYaw = false;
 	MovementComponent->bUseControllerDesiredRotation = bUseControllerDesiredRotation;
 	MovementComponent->bOrientRotationToMovement = !bUseControllerDesiredRotation;
-	MovementComponent->RotationRate = (bUseControllerDesiredRotation ? StrafeRotationRate : MovementRotationRate) * RotationRateMultiplier;
+	MovementComponent->RotationRate = BaseRotationRate * RotationRateMultiplier;
 }
 
 void USIPSandboxLocomotionComponent::RefreshSurfaceMovementProfile()
@@ -265,7 +289,7 @@ void USIPSandboxLocomotionComponent::RefreshWalkSpeedOverride()
 		return;
 	}
 
-	const bool bShouldOverrideMoveSpeed = bWalkIntent || bSprintIntent;
+	const bool bShouldOverrideMoveSpeed = bWalkIntent || bSprintIntent || IsFlaskRigCasting();
 	if (bShouldOverrideMoveSpeed)
 	{
 		if (!bWalkSpeedOverridden)
@@ -283,6 +307,11 @@ void USIPSandboxLocomotionComponent::RefreshWalkSpeedOverride()
 			DesiredMoveSpeed = FMath::Max(CachedBaseMoveSpeed, SprintSpeedFloor);
 		}
 
+		if (IsFlaskRigCasting())
+		{
+			DesiredMoveSpeed = FMath::Min(DesiredMoveSpeed, FlaskRigCastSpeedCap);
+		}
+
 		MovementComponent->MaxWalkSpeed = DesiredMoveSpeed;
 		bWalkSpeedOverridden = true;
 		return;
@@ -293,6 +322,53 @@ void USIPSandboxLocomotionComponent::RefreshWalkSpeedOverride()
 		MovementComponent->MaxWalkSpeed = CachedBaseMoveSpeed;
 		bWalkSpeedOverridden = false;
 	}
+}
+
+bool USIPSandboxLocomotionComponent::IsFlaskRigCasting() const
+{
+	const USIPAbilitySystemComponent* AbilitySystemComponent = OwnerAbilitySystemComponent.Get();
+	if (!AbilitySystemComponent)
+	{
+		return false;
+	}
+
+	const bool bHasFlaskRigTag =
+		AbilitySystemComponent->HasMatchingGameplayTag(SIPGameplayTags::State_Combat_WeaponModule_FlaskRig);
+
+	const bool bHasActiveCastPhase =
+		AbilitySystemComponent->HasMatchingGameplayTag(SIPGameplayTags::State_Combat_Cast_PreCast) ||
+		AbilitySystemComponent->HasMatchingGameplayTag(SIPGameplayTags::State_Combat_Cast_Release);
+
+	return bHasFlaskRigTag && bHasActiveCastPhase;
+}
+
+/**
+ * 判断当前是否处于“应该按战斗逻辑转向”的 Ice Rune Dagger 语义状态。
+ *
+ * 这里故意直接读 ASC 上的 loose gameplay tags，
+ * 因为桥接层已经把语义答案同步到了那里，
+ * 而 locomotion 这里只需要一份廉价的布尔判断。
+ */
+bool USIPSandboxLocomotionComponent::IsIceRuneDaggerCombatSteeringActive() const
+{
+	const USIPAbilitySystemComponent* AbilitySystemComponent = OwnerAbilitySystemComponent.Get();
+	if (!AbilitySystemComponent || !bIceSurfaceActive)
+	{
+		return false;
+	}
+
+	const bool bHasRuneDaggerTag =
+		AbilitySystemComponent->HasMatchingGameplayTag(SIPGameplayTags::State_Combat_WeaponModule_RuneDagger);
+	if (!bHasRuneDaggerTag)
+	{
+		return false;
+	}
+
+	return
+		AbilitySystemComponent->HasMatchingGameplayTag(SIPGameplayTags::State_Combat_ActionFamily_SlideEntry) ||
+		AbilitySystemComponent->HasMatchingGameplayTag(SIPGameplayTags::State_Combat_ActionFamily_DriftSlash) ||
+		AbilitySystemComponent->HasMatchingGameplayTag(SIPGameplayTags::State_Combat_ActionFamily_DriftTurnSlash) ||
+		AbilitySystemComponent->HasMatchingGameplayTag(SIPGameplayTags::State_Combat_ActionFamily_DelayedRestart);
 }
 
 // 用于把移动表现标签镜像同步到拥有者 ASC 的辅助函数。

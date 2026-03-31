@@ -2,16 +2,18 @@
 
 #pragma once
 
+#include "Combat/SIPCombatSemanticResolver.h"
 #include "CoreMinimal.h"
 #include "GameplayTagContainer.h"
 #include "Character/Components/SIPComponent.h"
 #include "SIPHeroAnimationBridgeComponent.generated.h"
 
 class ASIPCharacter;
+class ASIPHeroCharacter;
 class USIPAbilitySystemComponent;
+class USIPCombatSemanticProfile;
 
 /**
- * Z 说明：
  * HeroAnimationBridgeComponent 是“玩法逻辑”和“动画表现层”之间的桥接组件。
  *
  * 核心职责：
@@ -25,127 +27,323 @@ class SIP_API USIPHeroAnimationBridgeComponent : public USIPComponent
 	GENERATED_BODY()
 
 public:
-	// Z 说明：构造函数，启用 Tick 以便持续同步移动状态
 	USIPHeroAnimationBridgeComponent(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
 
-	// Z 说明：开始游戏时缓存 Owner 与 ASC 引用
+	/**
+	 * 组件进入世界后缓存拥有者相关引用。
+	 */
 	virtual void BeginPlay() override;
 	
-	// Z 说明：每帧同步角色速度、落地状态和跳跃状态，供动画层读取
+	/**
+	 * 每帧刷新移动缓存和战斗语义输出。
+	 */
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
-	// Z 说明：请求一次攻击表现，并安排命中窗口事件
+	/**
+	 * 不需要显式武器模块标签时使用的攻击请求便捷重载。
+	 */
 	bool RequestAttackAnimation(float HitWindowStartDelay, float HitWindowEndDelay);
+
+	/**
+	 * 进入攻击表现状态，并挂上攻击能力会监听的时序事件。
+	 */
+	bool RequestAttackAnimation(float HitWindowStartDelay, float HitWindowEndDelay, FGameplayTag WeaponModuleTag, FGameplayTag InitialCastPhaseTag);
+
+	/**
+	 * 使用 GA 已预解析的语义描述符进入攻击表现状态。
+	 * 跳过桥接层自身的初始解析，消除 GA 与 Bridge 之间的时序不一致。
+	 */
+	bool RequestAttackAnimation(float HitWindowStartDelay, float HitWindowEndDelay, FGameplayTag WeaponModuleTag, FGameplayTag InitialCastPhaseTag, const FSIPCombatActionDescriptor& PreResolvedDescriptor);
 	
-	// Z 说明：请求一次投掷表现，并安排释放事件
+	/**
+	 * 不需要显式武器模块标签时使用的投掷请求便捷重载。
+	 */
 	bool RequestThrowAnimation(float ReleaseDelay);
 
-	// Z 说明：取消当前攻击表现相关的定时事件与状态标签
+	/**
+	 * 进入投掷表现状态，并挂上释放事件。
+	 */
+	bool RequestThrowAnimation(float ReleaseDelay, FGameplayTag WeaponModuleTag, FGameplayTag InitialCastPhaseTag);
+
+	/**
+	 * 硬取消攻击表现，并清掉语义尾态。
+	 */
 	void CancelAttackAnimation();
+
+	/**
+	 * 软结束攻击表现，让攻击后的语义尾态还能保留下来，
+	 * 例如 glide exit 或 delayed restart。
+	 */
+	void FinishAttackAnimation(bool bQueuedBufferedFollowUp = false);
 	
-	// Z 说明：取消当前投掷表现相关的定时事件与状态标签
+	/**
+	 * 硬取消投掷表现。
+	 */
 	void CancelThrowAnimation();
 
-	// Z 说明：供动画 Notify 主动调用，将某个事件转发到 Gameplay 层
 	UFUNCTION(BlueprintCallable, Category = "SIP|Animation")
 	void NotifyAnimationEvent(FGameplayTag EventTag);
 
-	// Z 说明：查询当前桥接组件是否持有某个表现状态标签
 	UFUNCTION(BlueprintPure, Category = "SIP|Animation")
 	bool HasAnimationStateTag(FGameplayTag Tag) const;
 
-	// Z 说明：返回当前激活的表现状态标签集合
 	UFUNCTION(BlueprintPure, Category = "SIP|Animation")
 	FGameplayTagContainer GetAnimationStateTags() const { return ActiveAnimationStateTags; }
 
-	// Z 说明：返回最近一次请求的动作事件标签，方便动画蓝图分支判断
 	UFUNCTION(BlueprintPure, Category = "SIP|Animation")
 	FGameplayTag GetLastRequestedActionTag() const { return LastRequestedActionTag; }
 
-	// Z 说明：返回地面平面速度
+	UFUNCTION(BlueprintPure, Category = "SIP|Animation")
+	FGameplayTag GetCurrentWeaponModuleTag() const { return CurrentWeaponModuleTag; }
+
+	UFUNCTION(BlueprintPure, Category = "SIP|Animation")
+	FGameplayTag GetCurrentCastPhaseTag() const { return CurrentCastPhaseTag; }
+
+	UFUNCTION(BlueprintPure, Category = "SIP|Animation")
+	FGameplayTag GetCurrentCombatActionFamilyTag() const { return CurrentCombatActionFamilyTag; }
+
+	UFUNCTION(BlueprintPure, Category = "SIP|Animation")
+	FGameplayTag GetCurrentCombatBodyStateTag() const { return CurrentCombatBodyStateTag; }
+
+	UFUNCTION(BlueprintPure, Category = "SIP|Animation")
+	FSIPCombatActionDescriptor GetCurrentCombatActionDescriptor() const { return CurrentCombatActionDescriptor; }
+
+	UFUNCTION(BlueprintPure, Category = "SIP|Animation")
+	bool HasCurrentWeaponModuleTag(FGameplayTag Tag) const;
+
+	UFUNCTION(BlueprintPure, Category = "SIP|Animation")
+	bool IsInCastPhase(FGameplayTag Tag) const;
+
+	UFUNCTION(BlueprintPure, Category = "SIP|Animation")
+	bool HasCurrentCombatActionFamilyTag(FGameplayTag Tag) const;
+
+	UFUNCTION(BlueprintPure, Category = "SIP|Animation")
+	bool HasCurrentCombatBodyStateTag(FGameplayTag Tag) const;
+
 	UFUNCTION(BlueprintPure, Category = "SIP|Animation")
 	float GetGroundSpeed() const { return GroundSpeed; }
 
-	// Z 说明：返回角色当前世界速度
 	UFUNCTION(BlueprintPure, Category = "SIP|Animation")
 	FVector GetVelocity() const { return CachedVelocity; }
 
-	// Z 说明：简单判断角色当前是否在移动
 	UFUNCTION(BlueprintPure, Category = "SIP|Animation")
 	bool IsMoving() const { return GroundSpeed > KINDA_SMALL_NUMBER; }
 
-	// Z 说明：返回角色当前是否处于下落状态
 	UFUNCTION(BlueprintPure, Category = "SIP|Animation")
 	bool IsFalling() const { return bIsFalling; }
 
-	// Z 说明：返回角色当前是否处于起跳上升阶段
 	UFUNCTION(BlueprintPure, Category = "SIP|Animation")
 	bool IsJumping() const { return bIsJumping; }
 
-	// Z 说明：判断当前是否处于战斗表现阶段
 	UFUNCTION(BlueprintPure, Category = "SIP|Animation")
 	bool IsInCombatPresentation() const;
 
+	/**
+	 * 当语义战斗蒙太奇正在播放时返回 true，
+	 * ABP 应用此信号暂停 Motion Matching 搜索。
+	 */
+	UFUNCTION(BlueprintPure, Category = "SIP|Animation")
+	bool ShouldSuppressMotionMatching() const;
+
+	/**
+	 * 返回当前语义系统建议的 locomotion 模式，
+	 * 让 ABP 决定应该搜哪组 PoseSearchDatabase。
+	 */
+	UFUNCTION(BlueprintPure, Category = "SIP|Animation")
+	ESIPSemanticLocomotionMode GetSemanticLocomotionMode() const;
+
+	/**
+	 * 获取当前绑定的语义调参 Profile（可为 null）。
+	 */
+	UFUNCTION(BlueprintPure, Category = "SIP|Animation")
+	USIPCombatSemanticProfile* GetCombatSemanticProfile() const { return CombatSemanticProfile; }
+
 private:
-	// Z 说明：增加一个表现状态标签，并同步到 ASC Loose Tag
+	/**
+	 * 计算 Ice Rune Dagger 语义链使用的“面朝 vs 速度方向”有符号夹角。
+	 */
+	float GetIceRuneDaggerSignedTurnAngleDegrees(const ASIPCharacter* Character) const;
+
+	/**
+	 * 切换当前对外发布的武器模块标签。
+	 */
+	void SetWeaponModuleTag(const FGameplayTag& Tag);
+
+	/**
+	 * 切换当前对外发布的施法阶段标签。
+	 */
+	void SetCastPhaseTag(const FGameplayTag& Tag);
+
+	/**
+	 * 用当前运行时状态重新计算共享语义描述符。
+	 */
+	void UpdateCombatActionDescriptor();
+
+	/**
+	 * 把新解析出的语义描述符应用到标签和缓存字段上。
+	 */
+	void SetCombatActionDescriptor(const FSIPCombatActionDescriptor& Descriptor);
+
+	/**
+	 * 通过引用计数添加一个 loose gameplay tag，
+	 * 让多个系统可以安全地共同发布同一个标签。
+	 */
 	void AddAnimationStateTag(const FGameplayTag& Tag);
 	
-	// Z 说明：移除一个表现状态标签，并同步到 ASC Loose Tag
+	/**
+	 * 移除一个 loose gameplay tag 引用，
+	 * 只有没有任何持有者时才真正清掉。
+	 */
 	void RemoveAnimationStateTag(const FGameplayTag& Tag);
 
+	/**
+	 * 重置某个已跟踪动画事件的去重状态。
+	 */
 	void ResetAnimationEventDispatchState(const FGameplayTag& EventTag);
 	
-	// Z 说明：如果当前没有攻击/投掷表现，则清理总战斗状态
+	/**
+	 * 只有攻击和投掷两条表现状态都完全空闲后，才清理战斗表现层状态。
+	 */
 	void ClearCombatStateIfIdle();
 	
-	// Z 说明：注册一个延时动画事件，用于模拟或补足动画时序
+	/**
+	 * 为桥接层管理的动画事件安排一个计时器回退。
+	 */
 	void ScheduleAnimationEvent(FGameplayTag EventTag, float DelaySeconds);
 	
-	// Z 说明：取消某个延时动画事件
+	/**
+	 * 取消一个通过计时器安排的动画事件。
+	 */
 	void CancelAnimationEvent(FGameplayTag EventTag);
 	
-	// Z 说明：真正派发动画事件到 Owner Actor
+	/**
+	 * 把一个动画事件送进拥有者 Actor 的 GAS 事件通道。
+	 */
 	void DispatchAnimationEvent(FGameplayTag EventTag);
 	
-	// Z 说明：根据事件更新桥接组件维护的表现状态标签
+	/**
+	 * 当动画事件触发时，更新桥接层自己应该同步推进的状态，
+	 * 例如进入 release 或 recover。
+	 */
 	void ApplyAnimationEventState(FGameplayTag EventTag);
 	
-	// Z 说明：缓存 Owner Character 与其 AbilitySystemComponent
+	/**
+	 * 缓存桥接层每帧都会用到的 Owner 和 ASC 引用。
+	 */
 	void CacheOwnerReferences();
 
-	// Z 说明：拥有该桥接组件的角色
+	/**
+	 * 当当前攻击不再持有黄金链语义锁时，清掉这层临时锁定。
+	 */
+	void ResetCombatBodyStateLock();
+
+	/**
+	 * 启动语义尾态自动衰减计时器。
+	 */
+	void StartSemanticTailStateTTL();
+
+	/**
+	 * 尾态 TTL 到期后清理残留语义状态。
+	 */
+	void OnSemanticTailStateTTLExpired();
+
+	/**
+	 * 清除攻击后 MM 抑制宽限期。
+	 */
+	void ClearPostAttackMMSuppressionGrace();
+
+	/**
+	 * 攻击后 MM 抑制宽限期到期时恢复 MM。
+	 */
+	void OnPostAttackMMSuppressionGraceExpired();
+
 	TWeakObjectPtr<ASIPCharacter> OwnerCharacter;
 	
-	// Z 说明：角色持有的 ASC，用于同步 Loose Gameplay Tags
 	TWeakObjectPtr<USIPAbilitySystemComponent> OwnerAbilitySystemComponent;
 
-	// Z 说明：当前激活的表现状态标签集合
 	UPROPERTY(Transient)
 	FGameplayTagContainer ActiveAnimationStateTags;
 
-	// Z 说明：最近一次请求的动作标签，例如攻击请求、投掷请求
 	UPROPERTY(Transient)
 	FGameplayTag LastRequestedActionTag;
 
-	// Z 说明：标签引用计数，避免同一标签被多处流程重复增删时出错
+	UPROPERTY(Transient)
+	FGameplayTag CurrentWeaponModuleTag;
+
+	UPROPERTY(Transient)
+	FGameplayTag CurrentCastPhaseTag;
+
+	UPROPERTY(Transient)
+	FGameplayTag CurrentCombatActionFamilyTag;
+
+	UPROPERTY(Transient)
+	FGameplayTag CurrentCombatBodyStateTag;
+
+	UPROPERTY(Transient)
+	FSIPCombatActionDescriptor CurrentCombatActionDescriptor;
+
+	/**
+	 * 可选的语义调参 Profile 数据资产。
+	 * 设置后，桥接层和解析器会读取 Profile 中的阈值替代内部默认值。
+	 */
+	UPROPERTY(EditDefaultsOnly, Category = "SIP|Animation|Combat")
+	TObjectPtr<USIPCombatSemanticProfile> CombatSemanticProfile;
+
+	UPROPERTY(EditDefaultsOnly, Category = "SIP|Animation|Combat", meta = (ClampMin = "0.0"))
+	float IceRuneDaggerMinMomentumForSlideState = 260.0f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "SIP|Animation|Combat", meta = (ClampMin = "0.0", ClampMax = "180.0"))
+	float IceRuneDaggerDriftTurnMinAngleDegrees = 50.0f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "SIP|Animation|Combat", meta = (ClampMin = "0.0"))
+	float IceRuneDaggerDelayedRestartMinSpeed = 180.0f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "SIP|Animation|Combat", meta = (ClampMin = "0.0"))
+	float IceRuneDaggerGlideExitMinSpeed = 120.0f;
+
+	/**
+	 * 语义尾态（GlideExit / DelayedRestart 等）在没有后续输入时最多保持多久。
+	 */
+	UPROPERTY(EditDefaultsOnly, Category = "SIP|Animation|Combat", meta = (ClampMin = "0.1"))
+	float SemanticTailStateTTLSeconds = 2.5f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "SIP|Animation|Debug")
+	bool bDebugCombatBodyState = true;
+
+	UPROPERTY(EditDefaultsOnly, Category = "SIP|Animation|Debug")
+	bool bDebugCombatBodyStateOnScreen = true;
+
 	TMap<FGameplayTag, int32> AnimationStateTagCounts;
 	
-	// Z 说明：当前已注册的延时动画事件定时器
 	TMap<FGameplayTag, FTimerHandle> ScheduledAnimationEvents;
 
 	TSet<FGameplayTag> TrackedAnimationEvents;
 
 	TSet<FGameplayTag> DispatchedAnimationEvents;
 
-	// Z 说明：地面平面速度缓存
+	bool bCombatBodyStateLocked = false;
+	bool bLockedIceRuneDaggerSemantic = false;
+	bool bQueuedBufferedFollowUpAfterAttack = false;
+	bool bGoldenPathWasActiveDuringAttack = false;
+
+	FTimerHandle SemanticTailStateTTLHandle;
+
+	/**
+	 * 攻击蒙太奇结束后保持 MM 抑制的宽限期（秒）。
+	 * 须 >= 动态 BlendOut 上限（0.50s），让 DefaultSlot 完全混回 MM 输出后才放行搜索，
+	 * 防止 OffsetRootBone 在过渡期中看到 > 30 单位的位置跳变导致角色瞬移。
+	 */
+	UPROPERTY(EditDefaultsOnly, Category = "SIP|Animation|Combat", meta = (ClampMin = "0.0"))
+	float PostAttackMMSuppressionGraceSeconds = 0.60f;
+
+	FTimerHandle PostAttackMMSuppressionGraceHandle;
+	bool bPostAttackMMSuppressionGraceActive = false;
+
 	float GroundSpeed = 0.0f;
 	
-	// Z 说明：角色世界速度缓存
 	FVector CachedVelocity = FVector::ZeroVector;
 	
-	// Z 说明：角色是否处于下落状态
 	bool bIsFalling = false;
 	
-	// Z 说明：角色是否处于跳跃上升阶段
 	bool bIsJumping = false;
 };

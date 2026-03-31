@@ -1,6 +1,5 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 /**
- * Z 说明:
  * USIPIslandGeneratorComponent 是岛屿PCG 生成的管理组件
  * 挂在岛屿的Actor 上（或关卡中的IslandManager Actor）
  *

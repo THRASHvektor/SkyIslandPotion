@@ -5,7 +5,6 @@
 #include "Animation/SIPAnimationNotifyHelpers.h"
 
 /**
- * Z 说明：
  * SIPAnimNotify_GameplayEvent.cpp 实现单帧动画事件 Notify。
  *
  * 发送策略：
@@ -24,7 +23,6 @@ void USIPAnimNotify_GameplayEvent::Notify(USkeletalMeshComponent* MeshComp, UAni
 	SIPAnimationNotifyHelpers::SendGameplayEventFromMesh(MeshComp, EventTag);
 }
 
-// Z 说明：让编辑器里的 Notify 名称直接显示事件标签，便于调试
 FString USIPAnimNotify_GameplayEvent::GetNotifyName_Implementation() const
 {
 	return EventTag.IsValid() ? EventTag.ToString() : Super::GetNotifyName_Implementation();

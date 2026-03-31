@@ -1,6 +1,5 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 /**
- * Z 说明：
  * USIPMovementSet 是角色移动属性集
  * 从 USIPHealthSet 中拆分出来，遵循单一职责原则
  *

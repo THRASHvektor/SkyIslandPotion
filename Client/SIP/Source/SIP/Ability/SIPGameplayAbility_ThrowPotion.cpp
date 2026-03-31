@@ -9,6 +9,7 @@
 #include "Animation/AnimMontage.h"
 #include "Animation/AnimSequenceBase.h"
 #include "Camera/CameraComponent.h"
+#include "Character/Components/SIPContextualCameraComponent.h"
 #include "Character/Components/SIPHeroAnimationBridgeComponent.h"
 #include "Character/SIPCharacter.h"
 #include "Character/SIPHeroCharacter.h"
@@ -59,6 +60,7 @@ USIPGameplayAbility_ThrowPotion::USIPGameplayAbility_ThrowPotion(const FObjectIn
 	InstancingPolicy = EGameplayAbilityInstancingPolicy::InstancedPerExecution;
 	ActivationPolicy = ESIPAbilityActivationPolicy::OnInputTriggered;
 	ActivationBlockedTags.AddTag(SIPGameplayTags::State_Dead);
+	WeaponModuleTag = SIPGameplayTags::State_Combat_WeaponModule_FlaskRig;
 }
 
 // 投掷前要求投射物类型有效、角色存活，并通过基础 GAS 激活校验。
@@ -153,7 +155,10 @@ bool USIPGameplayAbility_ThrowPotion::StartAnimationDrivenThrow(ASIPCharacter* S
 	if (AnimationBridge)
 	{
 		ActiveAnimationBridge = AnimationBridge;
-		bHasBridgeTiming = AnimationBridge->RequestThrowAnimation(ResolvedReleaseDelay);
+		bHasBridgeTiming = AnimationBridge->RequestThrowAnimation(
+			ResolvedReleaseDelay,
+			WeaponModuleTag,
+			SIPGameplayTags::State_Combat_Cast_PreCast);
 		if (bHasBridgeTiming)
 		{
 			UE_LOG(LogSIPAbilitySystem, Log, TEXT("ThrowPotion ability using animation bridge timing for [%s]."), *GetNameSafe(SourceCharacter));
@@ -268,15 +273,30 @@ void USIPGameplayAbility_ThrowPotion::SpawnPotionProjectile(ASIPCharacter* Sourc
 	}
 
 	FVector ThrowDirection = SourceCharacter->GetActorForwardVector();
+	bool bResolvedViewDirection = false;
 
-	if (const UCameraComponent* Cam = SourceCharacter->FindComponentByClass<UCameraComponent>())
+	if (const ASIPHeroCharacter* HeroCharacter = Cast<ASIPHeroCharacter>(SourceCharacter))
 	{
-		ThrowDirection = Cam->GetForwardVector();
+		if (const USIPContextualCameraComponent* ContextualCamera = HeroCharacter->GetContextualCameraComponent())
+		{
+			// 优先走统一镜头服务，确保投掷朝向跟随当前真正生效的镜头语境。
+			ThrowDirection = ContextualCamera->GetViewDirection();
+			bResolvedViewDirection = true;
+		}
 	}
-	else if (const AController* Controller = SourceCharacter->GetController())
+
+	if (!bResolvedViewDirection)
 	{
-		FRotator ControlRot = Controller->GetControlRotation();
-		ThrowDirection = ControlRot.Vector();
+		// 保留旧链路作为保险：旧蓝图或非主角角色可能仍然只暴露原始 CameraComponent / Controller 朝向。
+		if (const UCameraComponent* Cam = SourceCharacter->FindComponentByClass<UCameraComponent>())
+		{
+			ThrowDirection = Cam->GetForwardVector();
+		}
+		else if (const AController* Controller = SourceCharacter->GetController())
+		{
+			FRotator ControlRot = Controller->GetControlRotation();
+			ThrowDirection = ControlRot.Vector();
+		}
 	}
 
 	const FRotator PitchRotation(LaunchPitchOffset, 0.f, 0.f);

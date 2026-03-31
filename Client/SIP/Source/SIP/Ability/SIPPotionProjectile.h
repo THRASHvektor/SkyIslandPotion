@@ -1,6 +1,5 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 /**
- * Z 说明：
  * ASIPPotionProjectile 是投掷药水的弹丸 Actor
  *
  * 行为流程：

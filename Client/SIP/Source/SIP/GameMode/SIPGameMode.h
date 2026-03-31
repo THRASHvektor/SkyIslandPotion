@@ -7,7 +7,6 @@
 #include "SIPGameMode.generated.h"
 
 /**
- * Z 说明：
  * 项目的最小化原生 GameMode。
  * 当前大部分玩家和关卡配置仍放在 Blueprint 中，
  * 这个类主要作为后续扩展游戏规则时的稳定原生基类。

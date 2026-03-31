@@ -16,7 +16,6 @@ class UAnimMontage;
 class USIPHeroAnimationBridgeComponent;
 
 /**
- * Z 说明：
  * 该能力仍然把激活、Commit 和冷却交给 GAS 管理，
  * 但真正的抛掷释放时机改为由动画层事件或本地回退时序来控制。
  */
@@ -100,11 +99,14 @@ public:
 
 	// 运行时根据原型动画构建投掷蒙太奇时使用的插槽名。
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "SIP|ThrowPotion|Animation")
-	FName ThrowMontageSlotName = TEXT("UpperBody");
+	FName ThrowMontageSlotName = TEXT("UpperBody_Cast");
 
 	// 当预设可用时，优先使用原型投掷/施法动画而不是手工指定的蒙太奇。
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "SIP|ThrowPotion|Animation")
 	bool bPreferPrototypeThrowAnimation = true;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "SIP|ThrowPotion|Animation", meta = (Categories = "State.Combat.WeaponModule"))
+	FGameplayTag WeaponModuleTag;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "SIP|ThrowPotion|Animation", meta = (ClampMin = "0.0"))
 	float ThrowReleaseDelay = 0.2f;

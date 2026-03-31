@@ -8,7 +8,6 @@
 #include "SIPComponent.generated.h"
 
 /**
- * Z 说明：
  * SIP 项目内各类自定义组件的轻量原生基类。
  * 目前主要统一构造和 BeginPlay 生命周期，后续也方便沉淀共用辅助能力。
  */

@@ -1,6 +1,5 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 /**
- * Z 说明：
  * USIPElementReactionSubsystem 是元素反应的计算核心
  * 继承自 UWorldSubsystem，随 World 生命周期存在
  *

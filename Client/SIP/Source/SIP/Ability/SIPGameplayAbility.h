@@ -1,6 +1,5 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 /**
- * Z 说明：
  * USIPGameplayAbility 是项目中所有技能的 C++ 基类
  * 继承自 UGameplayAbility，扩展了技能激活策略
  *
@@ -17,7 +16,6 @@
 #include "SIPGameplayAbility.generated.h"
 
 /**
- * Z 说明：技能激活策略枚举
  *
  * OnInputTriggered：
  *   - 只在输入按下瞬间尝试激活一次

@@ -8,7 +8,6 @@ class UWidgetComponent;
 class UCollectableHintWidget;
 
 /**
- * Z 说明：
  * `ACollectableItem` 是游戏里可收集/可拾取物品的基类，
  * 继承自 `ASIPPawn` 并实现了 `IInteractable` 接口。
  * 物体的碰撞对象类型需要配置为 `ECC_Interactable`，这样交互组件才能检测到它。

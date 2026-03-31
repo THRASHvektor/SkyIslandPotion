@@ -1,6 +1,5 @@
 #pragma once
 /**
- * Z 说明：
  * USIPAbilitySet 是项目中的技能集数据资产
  * 继承自 UPrimaryDataAsset，用于存储一组可授予给角色的技能配置
  * 
@@ -28,7 +27,6 @@ class UAbilitySystemComponent;
 struct FGameplayAbilitySpecHandle;
 
 /**
- * Z 说明：
  * FSIPAbilitySet_GameplayAbility 定义单个技能的配置
  * 用于将一个 GameplayAbility 绑定到输入标签
  * 
@@ -43,7 +41,6 @@ struct FSIPAbilitySet_GameplayAbility
 public:
 
 	/**
-	 * Z 说明：要授予的技能类
 	 * 必须是 UGameplayAbility 或其子类的蓝图类/C++类
 	 * 运行时会被实例化为 AbilitySpec
 	 */
@@ -51,7 +48,6 @@ public:
 	TSubclassOf<UGameplayAbility> Ability = nullptr;
 
 	/**
-	 * Z 说明：用于处理该技能的输入标签
 	 * 当玩家按下对应输入时，ASC 会查找匹配的 Ability 并激活
 	 * 
 	 * 匹配规则：
@@ -64,7 +60,6 @@ public:
 
 
 /**
- * Z 说明：
  * FSIPAbilitySet_GameplayEffect 定义单个 GameplayEffect 的配置
  * 用于授予被动效果或初始属性修饰
  */
@@ -76,7 +71,6 @@ struct FSIPAbilitySet_GameplayEffect
 public:
 
 	/**
-	 * Z 说明：要授予的 GameplayEffect 类
 	 * 常用场景：
 	 * - 初始属性设置（如设置最大生命值为100）
 	 * - 被动 Buff（如永久加速）
@@ -86,7 +80,6 @@ public:
 	TSubclassOf<UGameplayEffect> GameplayEffect = nullptr;
 
 	/**
-	 * Z 说明：效果等级
 	 * 某些 GE 支持多等级，等级越高效果越强
 	 */
 	UPROPERTY(EditDefaultsOnly)
@@ -95,7 +88,6 @@ public:
 
 
 /**
- * Z 说明：
  * FSIPAbilitySet_AttributeSet 定义单个 AttributeSet 的配置
  * 用于授予角色的属性集
  */
@@ -107,7 +99,6 @@ struct FSIPAbilitySet_AttributeSet
 public:
 
 	/**
-	 * Z 说明：要授予的 AttributeSet 类
 	 * 每个角色至少需要一个 AttributeSet 来存储属性
 	 * 常用：USIPHealthSet（生命值）、自定义属性集
 	 */
@@ -117,7 +108,6 @@ public:
 
 
 /**
- * Z 说明：
  * FSIPAbilitySet_GrantedHandles 用于存储已授权内容的句柄
  * 
  * 为什么需要这个结构？
@@ -133,25 +123,21 @@ struct FSIPAbilitySet_GrantedHandles
 public:
 
 	/**
-	 * Z 说明：添加技能句柄
 	 * 在授予技能时调用，记录授予的技能
 	 */
 	void AddAbilitySpecHandle(const FGameplayAbilitySpecHandle& Handle);
 
 	/**
-	 * Z 说明：添加 GameplayEffect 句柄
 	 * 在授予效果时调用，记录授予的效果
 	 */
 	void AddGameplayEffectHandle(const FActiveGameplayEffectHandle& Handle);
 
 	/**
-	 * Z 说明：添加 AttributeSet 指针
 	 * 在授予属性集时调用，记录授予的属性集
 	 */
 	void AddAttributeSet(UAttributeSet* AttributeSet);
 
 	/**
-	 * Z 说明：从 ASC 移除所有已授予的内容
 	 * 角色死亡/重生时可能需要调用此函数
 	 * 会清除所有 Ability、移除 AttributeSet
 	 */
@@ -160,21 +146,18 @@ public:
 protected:
 
 	/**
-	 * Z 说明：已授权技能的句柄列表
 	 * 用于后续清除技能
 	 */
 	UPROPERTY()
 	TArray<FGameplayAbilitySpecHandle> AbilitySpecHandles;
 
 	/**
-	 * Z 说明：已授权效果的句柄列表
 	 * 用于后续移除效果
 	 */
 	UPROPERTY()
 	TArray<FActiveGameplayEffectHandle> GameplayEffectHandles;
 	
 	/**
-	 * Z 说明：已授权的属性集列表
 	 * 用于后续移除属性集
 	 */
 	UPROPERTY()
@@ -183,7 +166,6 @@ protected:
 
 
 /**
- * Z 说明：
  * USIPAbilitySet 是技能集的容器类
  * 包含可授予给角色的 Ability、AttributeSet、GameplayEffect 配置
  * 
@@ -202,7 +184,6 @@ public:
 	USIPAbilitySet(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
 
 	/**
-	 * Z 说明：将技能集授予给指定的 ASC
 	 * 这是核心函数，在角色初始化时调用
 	 * 
 	 * @param ASC - 目标 AbilitySystemComponent
@@ -219,21 +200,18 @@ public:
 protected:
 
 	/**
-	 * Z 说明：要授予的技能列表
 	 * 每个元素包含 Ability 类和 InputTag
 	 */
 	UPROPERTY(EditDefaultsOnly, Category = "Gameplay Abilities", meta=(TitleProperty=Ability))
 	TArray<FSIPAbilitySet_GameplayAbility> GrantedGameplayAbilities;
 
 	/**
-	 * Z 说明：要授予的属性集列表
 	 * 通常每个角色需要至少一个属性集
 	 */
 	UPROPERTY(EditDefaultsOnly, Category = "Gameplay Attributes", meta=(TitleProperty=AttributeSet))
 	TArray<FSIPAbilitySet_AttributeSet> GrantedAttributeSets;
 
 	/**
-	 * Z 说明：要授予的 GameplayEffect 列表
 	 * 用于初始属性设置或被动效果
 	 */
 	UPROPERTY(EditDefaultsOnly, Category = "Gameplay Effects", meta=(TitleProperty=GameplayEffect))

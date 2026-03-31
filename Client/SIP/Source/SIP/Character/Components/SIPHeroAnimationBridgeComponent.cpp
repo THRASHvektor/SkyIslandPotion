@@ -5,12 +5,33 @@
 #include "AbilitySystemBlueprintLibrary.h"
 #include "Ability/SIPAbilitySystemComponent.h"
 #include "Character/SIPCharacter.h"
+#include "Character/SIPHeroCharacter.h"
+#include "Character/Components/SIPSandboxLocomotionComponent.h"
+#include "Combat/SIPCombatSemanticResolver.h"
+#include "Data/SIPCombatSemanticProfile.h"
+#include "Engine/Engine.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "SIPGameplayTags.h"
+#include "SIPLogCategory.h"
 #include "TimerManager.h"
 
+namespace
+{
+	void EmitCombatBodyStateDebug(UObject* ContextObject, const FString& Message, const bool bOnScreen)
+	{
+		UE_LOG(LogSIPAbilitySystem, Log, TEXT("%s"), *Message);
+
+		if (!bOnScreen || !GEngine)
+		{
+			return;
+		}
+
+		const uint64 MessageKey = uint64(uintptr_t(ContextObject)) + 2001ull;
+		GEngine->AddOnScreenDebugMessage(MessageKey, 1.5f, FColor::Yellow, Message);
+	}
+}
+
 /**
- * Z 说明：
  * SIPHeroAnimationBridgeComponent.cpp 实现玩法逻辑到动画表现层的桥接。
  *
  * 主要功能：
@@ -25,7 +46,6 @@ USIPHeroAnimationBridgeComponent::USIPHeroAnimationBridgeComponent(const FObject
 	PrimaryComponentTick.bCanEverTick = true;
 }
 
-// Z 说明：BeginPlay 时先缓存 Owner 角色和 ASC，减少后续重复查找
 void USIPHeroAnimationBridgeComponent::BeginPlay()
 {
 	Super::BeginPlay();
@@ -33,7 +53,6 @@ void USIPHeroAnimationBridgeComponent::BeginPlay()
 }
 
 /**
- * Z 说明：TickComponent
  * 每帧同步移动表现层最常用的几个状态：
  * 1. 世界速度
  * 2. 地面速度
@@ -73,13 +92,20 @@ void USIPHeroAnimationBridgeComponent::TickComponent(float DeltaTime, ELevelTick
 		bIsFalling = false;
 		bIsJumping = false;
 	}
+
+	UpdateCombatActionDescriptor();
+	ClearCombatStateIfIdle();
 }
 
 /**
- * Z 说明：RequestAttackAnimation
  * 进入一次攻击表现流程，并安排命中窗口开始/结束事件
  */
 bool USIPHeroAnimationBridgeComponent::RequestAttackAnimation(float HitWindowStartDelay, float HitWindowEndDelay)
+{
+	return RequestAttackAnimation(HitWindowStartDelay, HitWindowEndDelay, FGameplayTag(), SIPGameplayTags::State_Combat_Cast_PreCast);
+}
+
+bool USIPHeroAnimationBridgeComponent::RequestAttackAnimation(float HitWindowStartDelay, float HitWindowEndDelay, const FGameplayTag WeaponModuleTag, const FGameplayTag InitialCastPhaseTag)
 {
 	CancelAttackAnimation();
 
@@ -89,6 +115,30 @@ bool USIPHeroAnimationBridgeComponent::RequestAttackAnimation(float HitWindowSta
 	ResetAnimationEventDispatchState(SIPGameplayTags::Event_Animation_Attack_HitWindow_End);
 	AddAnimationStateTag(SIPGameplayTags::State_Combat);
 	AddAnimationStateTag(SIPGameplayTags::State_Combat_Attacking);
+	SetWeaponModuleTag(WeaponModuleTag);
+	bQueuedBufferedFollowUpAfterAttack = false;
+	bGoldenPathWasActiveDuringAttack = false;
+	ClearPostAttackMMSuppressionGrace();
+
+	if (const ASIPHeroCharacter* HeroCharacter = Cast<ASIPHeroCharacter>(OwnerCharacter.Get()))
+	{
+		const FSIPCombatFeatureVector InitialVector = SIPCombatSemantic::BuildHeroCombatFeatureVector(
+			HeroCharacter,
+			WeaponModuleTag,
+			InitialCastPhaseTag,
+			GetIceRuneDaggerSignedTurnAngleDegrees(HeroCharacter),
+			CombatSemanticProfile);
+		const FSIPCombatResolutionContext InitialContext;
+		const FSIPCombatActionDescriptor InitialDescriptor = SIPCombatSemantic::ResolveIceRuneDaggerGoldenPath(InitialVector, InitialContext);
+		bCombatBodyStateLocked = InitialDescriptor.HasResolvedAction();
+		bLockedIceRuneDaggerSemantic = InitialDescriptor.HasResolvedAction();
+	}
+	else
+	{
+		ResetCombatBodyStateLock();
+	}
+
+	SetCastPhaseTag(InitialCastPhaseTag);
 
 	ScheduleAnimationEvent(SIPGameplayTags::Event_Animation_Attack_HitWindow_Start, HitWindowStartDelay);
 	ScheduleAnimationEvent(SIPGameplayTags::Event_Animation_Attack_HitWindow_End, HitWindowEndDelay);
@@ -97,10 +147,51 @@ bool USIPHeroAnimationBridgeComponent::RequestAttackAnimation(float HitWindowSta
 }
 
 /**
- * Z 说明：RequestThrowAnimation
+ * 使用 GA 已预解析的语义描述符进入攻击表现状态，
+ * 跳过桥接层自身的初始解析，消除两层解析之间的时序差异。
+ */
+bool USIPHeroAnimationBridgeComponent::RequestAttackAnimation(float HitWindowStartDelay, float HitWindowEndDelay, const FGameplayTag WeaponModuleTag, const FGameplayTag InitialCastPhaseTag, const FSIPCombatActionDescriptor& PreResolvedDescriptor)
+{
+	CancelAttackAnimation();
+
+	LastRequestedActionTag = SIPGameplayTags::Event_Animation_Attack_Request;
+	ResetAnimationEventDispatchState(LastRequestedActionTag);
+	ResetAnimationEventDispatchState(SIPGameplayTags::Event_Animation_Attack_HitWindow_Start);
+	ResetAnimationEventDispatchState(SIPGameplayTags::Event_Animation_Attack_HitWindow_End);
+	AddAnimationStateTag(SIPGameplayTags::State_Combat);
+	AddAnimationStateTag(SIPGameplayTags::State_Combat_Attacking);
+	SetWeaponModuleTag(WeaponModuleTag);
+	bQueuedBufferedFollowUpAfterAttack = false;
+	bGoldenPathWasActiveDuringAttack = false;
+	ClearPostAttackMMSuppressionGrace();
+
+	const bool bHasPreResolvedDescriptor = PreResolvedDescriptor.HasResolvedAction();
+	bCombatBodyStateLocked = bHasPreResolvedDescriptor;
+	bLockedIceRuneDaggerSemantic = bHasPreResolvedDescriptor;
+
+	SetCastPhaseTag(InitialCastPhaseTag);
+
+	// 直接应用 GA 的预解析结果，覆盖 SetCastPhaseTag 触发的中间解析
+	if (bHasPreResolvedDescriptor)
+	{
+		SetCombatActionDescriptor(PreResolvedDescriptor);
+	}
+
+	ScheduleAnimationEvent(SIPGameplayTags::Event_Animation_Attack_HitWindow_Start, HitWindowStartDelay);
+	ScheduleAnimationEvent(SIPGameplayTags::Event_Animation_Attack_HitWindow_End, HitWindowEndDelay);
+	DispatchAnimationEvent(LastRequestedActionTag);
+	return true;
+}
+
+/**
  * 进入一次投掷表现流程，并安排释放事件
  */
 bool USIPHeroAnimationBridgeComponent::RequestThrowAnimation(float ReleaseDelay)
+{
+	return RequestThrowAnimation(ReleaseDelay, FGameplayTag(), SIPGameplayTags::State_Combat_Cast_PreCast);
+}
+
+bool USIPHeroAnimationBridgeComponent::RequestThrowAnimation(float ReleaseDelay, const FGameplayTag WeaponModuleTag, const FGameplayTag InitialCastPhaseTag)
 {
 	CancelThrowAnimation();
 
@@ -109,13 +200,14 @@ bool USIPHeroAnimationBridgeComponent::RequestThrowAnimation(float ReleaseDelay)
 	ResetAnimationEventDispatchState(SIPGameplayTags::Event_Animation_Throw_Release);
 	AddAnimationStateTag(SIPGameplayTags::State_Combat);
 	AddAnimationStateTag(SIPGameplayTags::State_Combat_Throwing);
+	SetWeaponModuleTag(WeaponModuleTag);
+	SetCastPhaseTag(InitialCastPhaseTag);
 
 	ScheduleAnimationEvent(SIPGameplayTags::Event_Animation_Throw_Release, ReleaseDelay);
 	DispatchAnimationEvent(LastRequestedActionTag);
 	return true;
 }
 
-// Z 说明：取消攻击表现相关的事件与状态标签
 void USIPHeroAnimationBridgeComponent::CancelAttackAnimation()
 {
 	CancelAnimationEvent(SIPGameplayTags::Event_Animation_Attack_HitWindow_Start);
@@ -125,39 +217,327 @@ void USIPHeroAnimationBridgeComponent::CancelAttackAnimation()
 	DispatchedAnimationEvents.Add(SIPGameplayTags::Event_Animation_Attack_HitWindow_End);
 	RemoveAnimationStateTag(SIPGameplayTags::State_Combat_Attack_HitWindow);
 	RemoveAnimationStateTag(SIPGameplayTags::State_Combat_Attacking);
+	bQueuedBufferedFollowUpAfterAttack = false;
+	bGoldenPathWasActiveDuringAttack = false;
+	ClearPostAttackMMSuppressionGrace();
+	SetCastPhaseTag(FGameplayTag());
+	ResetCombatBodyStateLock();
+	SetCombatActionDescriptor(FSIPCombatActionDescriptor());
 	ClearCombatStateIfIdle();
 }
 
-// Z 说明：取消投掷表现相关的事件与状态标签
+void USIPHeroAnimationBridgeComponent::FinishAttackAnimation(const bool bQueuedBufferedFollowUp)
+{
+	const bool bWasGoldenPathActive = CurrentCombatActionDescriptor.bGoldenPathActive || bGoldenPathWasActiveDuringAttack;
+	bGoldenPathWasActiveDuringAttack = false;
+
+	CancelAnimationEvent(SIPGameplayTags::Event_Animation_Attack_HitWindow_Start);
+	CancelAnimationEvent(SIPGameplayTags::Event_Animation_Attack_HitWindow_End);
+	DispatchedAnimationEvents.Add(SIPGameplayTags::Event_Animation_Attack_Request);
+	DispatchedAnimationEvents.Add(SIPGameplayTags::Event_Animation_Attack_HitWindow_Start);
+	DispatchedAnimationEvents.Add(SIPGameplayTags::Event_Animation_Attack_HitWindow_End);
+	RemoveAnimationStateTag(SIPGameplayTags::State_Combat_Attack_HitWindow);
+	RemoveAnimationStateTag(SIPGameplayTags::State_Combat_Attacking);
+	bQueuedBufferedFollowUpAfterAttack = bQueuedBufferedFollowUp;
+	SetCastPhaseTag(FGameplayTag());
+	ResetCombatBodyStateLock();
+	UpdateCombatActionDescriptor();
+
+	// 攻击结束后延长 MM 抑制一小段时间，
+	// 防止 Motion Matching 恢复时把角色弹回攻击前的位置。
+	if (bWasGoldenPathActive && !bQueuedBufferedFollowUp)
+	{
+		bPostAttackMMSuppressionGraceActive = true;
+		if (UWorld* World = GetWorld())
+		{
+			World->GetTimerManager().ClearTimer(PostAttackMMSuppressionGraceHandle);
+			FTimerDelegate Delegate;
+			Delegate.BindUObject(this, &USIPHeroAnimationBridgeComponent::OnPostAttackMMSuppressionGraceExpired);
+			const float GraceSeconds = CombatSemanticProfile
+				? FMath::Max(CombatSemanticProfile->PostAttackMMSuppressionGraceSeconds, 0.05f)
+				: PostAttackMMSuppressionGraceSeconds;
+			World->GetTimerManager().SetTimer(PostAttackMMSuppressionGraceHandle, Delegate, GraceSeconds, false);
+		}
+	}
+
+	ClearCombatStateIfIdle();
+}
+
 void USIPHeroAnimationBridgeComponent::CancelThrowAnimation()
 {
 	CancelAnimationEvent(SIPGameplayTags::Event_Animation_Throw_Release);
 	DispatchedAnimationEvents.Add(SIPGameplayTags::Event_Animation_Throw_Request);
 	DispatchedAnimationEvents.Add(SIPGameplayTags::Event_Animation_Throw_Release);
 	RemoveAnimationStateTag(SIPGameplayTags::State_Combat_Throwing);
+	bQueuedBufferedFollowUpAfterAttack = false;
+	SetCastPhaseTag(FGameplayTag());
+	ResetCombatBodyStateLock();
+	SetCombatActionDescriptor(FSIPCombatActionDescriptor());
 	ClearCombatStateIfIdle();
 }
 
-// Z 说明：动画 Notify 可以直接通过该入口把事件送入桥接组件
 void USIPHeroAnimationBridgeComponent::NotifyAnimationEvent(FGameplayTag EventTag)
 {
 	DispatchAnimationEvent(EventTag);
 }
 
-// Z 说明：判断当前是否持有指定表现状态标签
 bool USIPHeroAnimationBridgeComponent::HasAnimationStateTag(FGameplayTag Tag) const
 {
 	return Tag.IsValid() && ActiveAnimationStateTags.HasTagExact(Tag);
 }
 
-// Z 说明：只要仍处于 Combat 状态标签下，就认为在战斗表现阶段
+/**
+ * 供下游动画代码查询当前是否处于全局战斗表现状态。
+ */
 bool USIPHeroAnimationBridgeComponent::IsInCombatPresentation() const
 {
 	return HasAnimationStateTag(SIPGameplayTags::State_Combat);
 }
 
 /**
- * Z 说明：AddAnimationStateTag
+ * 当前武器模块标签查询辅助函数。
+ */
+bool USIPHeroAnimationBridgeComponent::HasCurrentWeaponModuleTag(const FGameplayTag Tag) const
+{
+	return Tag.IsValid() && CurrentWeaponModuleTag.MatchesTagExact(Tag);
+}
+
+/**
+ * 当前施法阶段标签查询辅助函数。
+ */
+bool USIPHeroAnimationBridgeComponent::IsInCastPhase(const FGameplayTag Tag) const
+{
+	return Tag.IsValid() && CurrentCastPhaseTag.MatchesTagExact(Tag);
+}
+
+/**
+ * 当前动作家族标签查询辅助函数，供 AnimBP 和玩法代码共用。
+ */
+bool USIPHeroAnimationBridgeComponent::HasCurrentCombatActionFamilyTag(const FGameplayTag Tag) const
+{
+	return Tag.IsValid() && CurrentCombatActionFamilyTag.MatchesTagExact(Tag);
+}
+
+/**
+ * 当前身体状态标签查询辅助函数，供 AnimBP 和玩法代码共用。
+ */
+bool USIPHeroAnimationBridgeComponent::HasCurrentCombatBodyStateTag(const FGameplayTag Tag) const
+{
+	return Tag.IsValid() && CurrentCombatBodyStateTag.MatchesTagExact(Tag);
+}
+
+/**
+ * 计算 Ice Rune Dagger 解析器使用的“面朝 vs 速度方向”有符号测量值。
+ */
+float USIPHeroAnimationBridgeComponent::GetIceRuneDaggerSignedTurnAngleDegrees(const ASIPCharacter* Character) const
+{
+	// Use a meaningful speed threshold to avoid jittery angle output at near-zero velocity
+	// on ice (friction is very low → tiny residual velocity produces random facing angles).
+	static constexpr float MinSpeedSquaredForAngle = 10.0f * 10.0f; // 10 cm/s
+	if (!Character || CachedVelocity.SizeSquared2D() <= MinSpeedSquaredForAngle)
+	{
+		return 0.0f;
+	}
+
+	return SIPCombatSemantic::GetSignedTurnAngleDegrees(Character->GetActorForwardVector(), CachedVelocity);
+}
+
+/**
+ * 切换当前武器模块标签，并触发下游语义刷新。
+ */
+void USIPHeroAnimationBridgeComponent::SetWeaponModuleTag(const FGameplayTag& Tag)
+{
+	if (CurrentWeaponModuleTag == Tag)
+	{
+		return;
+	}
+
+	if (CurrentWeaponModuleTag.IsValid())
+	{
+		RemoveAnimationStateTag(CurrentWeaponModuleTag);
+	}
+
+	CurrentWeaponModuleTag = Tag;
+
+	if (CurrentWeaponModuleTag.IsValid())
+	{
+		AddAnimationStateTag(CurrentWeaponModuleTag);
+	}
+
+	UpdateCombatActionDescriptor();
+
+	if (ASIPHeroCharacter* HeroCharacter = Cast<ASIPHeroCharacter>(OwnerCharacter.Get()))
+	{
+		if (USIPSandboxLocomotionComponent* LocomotionComponent = HeroCharacter->GetSandboxLocomotionComponent())
+		{
+			LocomotionComponent->HandleExternalSemanticStateChanged();
+		}
+	}
+}
+
+/**
+ * 切换当前施法阶段标签，并触发下游语义刷新。
+ */
+void USIPHeroAnimationBridgeComponent::SetCastPhaseTag(const FGameplayTag& Tag)
+{
+	if (CurrentCastPhaseTag == Tag)
+	{
+		return;
+	}
+
+	if (CurrentCastPhaseTag.IsValid())
+	{
+		RemoveAnimationStateTag(CurrentCastPhaseTag);
+	}
+
+	CurrentCastPhaseTag = Tag;
+
+	if (CurrentCastPhaseTag.IsValid())
+	{
+		AddAnimationStateTag(CurrentCastPhaseTag);
+	}
+
+	UpdateCombatActionDescriptor();
+
+	if (ASIPHeroCharacter* HeroCharacter = Cast<ASIPHeroCharacter>(OwnerCharacter.Get()))
+	{
+		if (USIPSandboxLocomotionComponent* LocomotionComponent = HeroCharacter->GetSandboxLocomotionComponent())
+		{
+			LocomotionComponent->HandleExternalSemanticStateChanged();
+		}
+	}
+}
+
+/**
+ * 用主角当前状态和桥接层持有的攻击尾态上下文，重新解析当前语义描述符。
+ */
+void USIPHeroAnimationBridgeComponent::UpdateCombatActionDescriptor()
+{
+	const ASIPHeroCharacter* HeroCharacter = Cast<ASIPHeroCharacter>(OwnerCharacter.Get());
+	if (!HeroCharacter)
+	{
+		SetCombatActionDescriptor(FSIPCombatActionDescriptor());
+		return;
+	}
+
+	const FSIPCombatFeatureVector FeatureVector = SIPCombatSemantic::BuildHeroCombatFeatureVector(
+		HeroCharacter,
+		CurrentWeaponModuleTag,
+		CurrentCastPhaseTag,
+		GetIceRuneDaggerSignedTurnAngleDegrees(HeroCharacter),
+		CombatSemanticProfile);
+
+	FSIPCombatResolutionContext ResolutionContext;
+	ResolutionContext.PreviousBodyStateTag = CurrentCombatBodyStateTag;
+	ResolutionContext.bHasBufferedFollowUp = bQueuedBufferedFollowUpAfterAttack;
+	ResolutionContext.bLockGoldenPath = bCombatBodyStateLocked && bLockedIceRuneDaggerSemantic;
+	ResolutionContext.DelayedRestartMinSpeed = CombatSemanticProfile
+		? CombatSemanticProfile->IceRuneDaggerDelayedRestartMinSpeed
+		: IceRuneDaggerDelayedRestartMinSpeed;
+	ResolutionContext.GlideExitMinSpeed = CombatSemanticProfile
+		? CombatSemanticProfile->IceRuneDaggerGlideExitMinSpeed
+		: IceRuneDaggerGlideExitMinSpeed;
+	SetCombatActionDescriptor(SIPCombatSemantic::ResolveIceRuneDaggerGoldenPath(FeatureVector, ResolutionContext));
+
+	// 延迟锁定：如果 GA 激活时速度瞬时为 0（traversal/落地瞬间），
+	// 初始解析未能構建语义描述符导致 lock 未设置。
+	// 下一帧速度恢复后解析出黄金链，此时补上 lock，
+	// 避免语义状态随速度波动在后续帧被冲掉。
+	if (HasAnimationStateTag(SIPGameplayTags::State_Combat_Attacking) &&
+		CurrentCombatActionDescriptor.bGoldenPathActive &&
+		!bCombatBodyStateLocked)
+	{
+		bCombatBodyStateLocked = true;
+		bLockedIceRuneDaggerSemantic = true;
+	}
+}
+
+/**
+ * 发布一份新解析出来的语义描述符。
+ *
+ * 这里会同时更新：
+ * 1. loose gameplay tags。
+ * 2. 本地缓存的动作/身体状态字段。
+ * 3. 调试输出。
+ * 4. 主角线程安全快照，供动画层消费。
+ */
+void USIPHeroAnimationBridgeComponent::SetCombatActionDescriptor(const FSIPCombatActionDescriptor& Descriptor)
+{
+	const bool bDescriptorUnchanged =
+		CurrentCombatActionFamilyTag == Descriptor.ActionFamilyTag &&
+		CurrentCombatBodyStateTag == Descriptor.BodyStateTag &&
+		CurrentCombatActionDescriptor.DesiredVariant == Descriptor.DesiredVariant &&
+		CurrentCombatActionDescriptor.bUseMomentumWarp == Descriptor.bUseMomentumWarp &&
+		CurrentCombatActionDescriptor.RecoveryBias == Descriptor.RecoveryBias &&
+		CurrentCombatActionDescriptor.ChainWindowPolicy == Descriptor.ChainWindowPolicy &&
+		CurrentCombatActionDescriptor.bGoldenPathActive == Descriptor.bGoldenPathActive;
+	if (bDescriptorUnchanged)
+	{
+		return;
+	}
+
+	const FGameplayTag PreviousCombatActionFamilyTag = CurrentCombatActionFamilyTag;
+	const FGameplayTag PreviousCombatBodyStateTag = CurrentCombatBodyStateTag;
+	const FName PreviousDesiredVariant = CurrentCombatActionDescriptor.DesiredVariant;
+
+	if (CurrentCombatActionFamilyTag.IsValid() && CurrentCombatActionFamilyTag != Descriptor.ActionFamilyTag)
+	{
+		RemoveAnimationStateTag(CurrentCombatActionFamilyTag);
+	}
+
+	if (CurrentCombatBodyStateTag.IsValid() && CurrentCombatBodyStateTag != Descriptor.BodyStateTag)
+	{
+		RemoveAnimationStateTag(CurrentCombatBodyStateTag);
+	}
+
+	CurrentCombatActionDescriptor = Descriptor;
+	CurrentCombatActionFamilyTag = Descriptor.ActionFamilyTag;
+	CurrentCombatBodyStateTag = Descriptor.BodyStateTag;
+
+	// 跟踪本次攻击期间黄金链是否曾经被激活过，
+	// 即使后续帧因速度下降塌回 None，FinishAttackAnimation 仍然知道有过语义状态。
+	if (Descriptor.bGoldenPathActive && HasAnimationStateTag(SIPGameplayTags::State_Combat_Attacking))
+	{
+		bGoldenPathWasActiveDuringAttack = true;
+	}
+
+	if (CurrentCombatActionFamilyTag.IsValid() && CurrentCombatActionFamilyTag != PreviousCombatActionFamilyTag)
+	{
+		AddAnimationStateTag(CurrentCombatActionFamilyTag);
+	}
+
+	if (CurrentCombatBodyStateTag.IsValid() && CurrentCombatBodyStateTag != PreviousCombatBodyStateTag)
+	{
+		AddAnimationStateTag(CurrentCombatBodyStateTag);
+	}
+
+	if (bDebugCombatBodyState)
+	{
+		const float ResolvedSpeed = OwnerCharacter.IsValid() ? OwnerCharacter->GetVelocity().Size2D() : CachedVelocity.Size2D();
+		EmitCombatBodyStateDebug(
+			this,
+			FString::Printf(
+				TEXT("[CombatSemantic] %s/%s -> %s/%s | Variant=%s->%s | Speed=%.1f | Cast=%s | Weapon=%s | BufferedFollowUp=%s"),
+				*PreviousCombatActionFamilyTag.ToString(),
+				*PreviousCombatBodyStateTag.ToString(),
+				*CurrentCombatActionFamilyTag.ToString(),
+				*CurrentCombatBodyStateTag.ToString(),
+				*PreviousDesiredVariant.ToString(),
+				*CurrentCombatActionDescriptor.DesiredVariant.ToString(),
+				ResolvedSpeed,
+				*CurrentCastPhaseTag.ToString(),
+				*CurrentWeaponModuleTag.ToString(),
+				bQueuedBufferedFollowUpAfterAttack ? TEXT("Y") : TEXT("N")),
+			bDebugCombatBodyStateOnScreen);
+	}
+
+	if (ASIPHeroCharacter* HeroCharacter = Cast<ASIPHeroCharacter>(OwnerCharacter.Get()))
+	{
+		HeroCharacter->RefreshSandboxThreadSafeState();
+	}
+}
+
+/**
  * 通过引用计数管理状态标签，避免标签被重复移除
  */
 void USIPHeroAnimationBridgeComponent::AddAnimationStateTag(const FGameplayTag& Tag)
@@ -182,7 +562,6 @@ void USIPHeroAnimationBridgeComponent::AddAnimationStateTag(const FGameplayTag& 
 }
 
 /**
- * Z 说明：RemoveAnimationStateTag
  * 当引用计数归零时，才真正移除标签并同步到 ASC
  */
 void USIPHeroAnimationBridgeComponent::RemoveAnimationStateTag(const FGameplayTag& Tag)
@@ -213,7 +592,6 @@ void USIPHeroAnimationBridgeComponent::RemoveAnimationStateTag(const FGameplayTa
 	}
 }
 
-// Z 说明：攻击和投掷都结束后，移除总战斗状态标签
 void USIPHeroAnimationBridgeComponent::ClearCombatStateIfIdle()
 {
 	const bool bHasAttackState = HasAnimationStateTag(SIPGameplayTags::State_Combat_Attacking);
@@ -222,7 +600,24 @@ void USIPHeroAnimationBridgeComponent::ClearCombatStateIfIdle()
 	if (!bHasAttackState && !bHasThrowState)
 	{
 		RemoveAnimationStateTag(SIPGameplayTags::State_Combat_Attack_HitWindow);
-		RemoveAnimationStateTag(SIPGameplayTags::State_Combat);
+		if (CurrentCastPhaseTag.IsValid())
+		{
+			SetCastPhaseTag(FGameplayTag());
+		}
+
+		const bool bHasSemanticTail = CurrentCombatActionDescriptor.HasResolvedAction();
+		if (!bHasSemanticTail)
+		{
+			bQueuedBufferedFollowUpAfterAttack = false;
+			SetCombatActionDescriptor(FSIPCombatActionDescriptor());
+			SetWeaponModuleTag(FGameplayTag());
+			ResetCombatBodyStateLock();
+			RemoveAnimationStateTag(SIPGameplayTags::State_Combat);
+		}
+		else
+		{
+			StartSemanticTailStateTTL();
+		}
 	}
 }
 
@@ -238,7 +633,6 @@ void USIPHeroAnimationBridgeComponent::ResetAnimationEventDispatchState(const FG
 }
 
 /**
- * Z 说明：ScheduleAnimationEvent
  * 通过定时器延迟派发某个动画事件，用于没有 Notify 时的回退时序
  */
 void USIPHeroAnimationBridgeComponent::ScheduleAnimationEvent(FGameplayTag EventTag, float DelaySeconds)
@@ -267,7 +661,6 @@ void USIPHeroAnimationBridgeComponent::ScheduleAnimationEvent(FGameplayTag Event
 	}
 }
 
-// Z 说明：取消某个已注册的动画事件定时器
 void USIPHeroAnimationBridgeComponent::CancelAnimationEvent(FGameplayTag EventTag)
 {
 	if (!EventTag.IsValid())
@@ -287,7 +680,6 @@ void USIPHeroAnimationBridgeComponent::CancelAnimationEvent(FGameplayTag EventTa
 }
 
 /**
- * Z 说明：DispatchAnimationEvent
  * 真正将动画事件转发给 Owner Actor 的 GAS 事件系统
  */
 void USIPHeroAnimationBridgeComponent::DispatchAnimationEvent(FGameplayTag EventTag)
@@ -322,7 +714,6 @@ void USIPHeroAnimationBridgeComponent::DispatchAnimationEvent(FGameplayTag Event
 	}
 }
 
-// Z 说明：根据事件类型同步命中窗口等表现状态标签
 void USIPHeroAnimationBridgeComponent::ApplyAnimationEventState(FGameplayTag EventTag)
 {
 	if (EventTag == SIPGameplayTags::Event_Animation_Attack_HitWindow_Start)
@@ -330,17 +721,130 @@ void USIPHeroAnimationBridgeComponent::ApplyAnimationEventState(FGameplayTag Eve
 		if (HasAnimationStateTag(SIPGameplayTags::State_Combat_Attacking))
 		{
 			AddAnimationStateTag(SIPGameplayTags::State_Combat_Attack_HitWindow);
+			SetCastPhaseTag(SIPGameplayTags::State_Combat_Cast_Release);
 		}
 	}
 	else if (EventTag == SIPGameplayTags::Event_Animation_Attack_HitWindow_End)
 	{
 		RemoveAnimationStateTag(SIPGameplayTags::State_Combat_Attack_HitWindow);
+		if (HasAnimationStateTag(SIPGameplayTags::State_Combat_Attacking))
+		{
+			SetCastPhaseTag(SIPGameplayTags::State_Combat_Cast_Recover);
+		}
+	}
+	else if (EventTag == SIPGameplayTags::Event_Animation_Throw_Release)
+	{
+		if (HasAnimationStateTag(SIPGameplayTags::State_Combat_Throwing))
+		{
+			SetCastPhaseTag(SIPGameplayTags::State_Combat_Cast_Release);
+		}
 	}
 }
 
-// Z 说明：缓存 OwnerCharacter 与 ASC，供后续事件分发和标签同步使用
 void USIPHeroAnimationBridgeComponent::CacheOwnerReferences()
 {
 	OwnerCharacter = Cast<ASIPCharacter>(GetOwner());
 	OwnerAbilitySystemComponent = OwnerCharacter.IsValid() ? OwnerCharacter->GetSIPAbilitySystemComponent() : nullptr;
+}
+
+void USIPHeroAnimationBridgeComponent::ResetCombatBodyStateLock()
+{
+	bCombatBodyStateLocked = false;
+	bLockedIceRuneDaggerSemantic = false;
+}
+
+bool USIPHeroAnimationBridgeComponent::ShouldSuppressMotionMatching() const
+{
+	// 在活跃的黄金链攻击蒙太奇播放期间抑制 MM
+	if (HasAnimationStateTag(SIPGameplayTags::State_Combat_Attacking) &&
+		CurrentCombatActionDescriptor.bGoldenPathActive)
+	{
+		return true;
+	}
+
+	// 攻击蒙太奇结束后的短暂宽限期，
+	// 让角色动量自然衬减而不是被 MM 弹回去。
+	return bPostAttackMMSuppressionGraceActive;
+}
+
+ESIPSemanticLocomotionMode USIPHeroAnimationBridgeComponent::GetSemanticLocomotionMode() const
+{
+	const bool bOnIce = [this]()
+	{
+		const ASIPHeroCharacter* HeroCharacter = Cast<ASIPHeroCharacter>(OwnerCharacter.Get());
+		if (!HeroCharacter) return false;
+		const USIPSandboxLocomotionComponent* Loco = HeroCharacter->GetSandboxLocomotionComponent();
+		return Loco && Loco->IsIceSurfaceActive();
+	}();
+
+	if (ShouldSuppressMotionMatching())
+	{
+		return ESIPSemanticLocomotionMode::SemanticCombatOverride;
+	}
+
+	if (bOnIce && IsInCombatPresentation())
+	{
+		return ESIPSemanticLocomotionMode::IceCombat;
+	}
+
+	if (bOnIce)
+	{
+		return ESIPSemanticLocomotionMode::IceLocomotion;
+	}
+
+	return ESIPSemanticLocomotionMode::Default;
+}
+
+void USIPHeroAnimationBridgeComponent::StartSemanticTailStateTTL()
+{
+	UWorld* World = GetWorld();
+	if (!World)
+	{
+		return;
+	}
+
+	World->GetTimerManager().ClearTimer(SemanticTailStateTTLHandle);
+
+	const float TTLSeconds = CombatSemanticProfile
+		? CombatSemanticProfile->SemanticTailStateTTLSeconds
+		: SemanticTailStateTTLSeconds;
+
+	FTimerDelegate Delegate;
+	Delegate.BindUObject(this, &USIPHeroAnimationBridgeComponent::OnSemanticTailStateTTLExpired);
+	World->GetTimerManager().SetTimer(SemanticTailStateTTLHandle, Delegate, TTLSeconds, false);
+}
+
+void USIPHeroAnimationBridgeComponent::OnSemanticTailStateTTLExpired()
+{
+	if (HasAnimationStateTag(SIPGameplayTags::State_Combat_Attacking) ||
+		HasAnimationStateTag(SIPGameplayTags::State_Combat_Throwing))
+	{
+		return;
+	}
+
+	bQueuedBufferedFollowUpAfterAttack = false;
+	ClearPostAttackMMSuppressionGrace();
+	SetCombatActionDescriptor(FSIPCombatActionDescriptor());
+	SetWeaponModuleTag(FGameplayTag());
+	ResetCombatBodyStateLock();
+	RemoveAnimationStateTag(SIPGameplayTags::State_Combat);
+}
+
+void USIPHeroAnimationBridgeComponent::ClearPostAttackMMSuppressionGrace()
+{
+	bPostAttackMMSuppressionGraceActive = false;
+	if (UWorld* World = GetWorld())
+	{
+		World->GetTimerManager().ClearTimer(PostAttackMMSuppressionGraceHandle);
+	}
+}
+
+void USIPHeroAnimationBridgeComponent::OnPostAttackMMSuppressionGraceExpired()
+{
+	bPostAttackMMSuppressionGraceActive = false;
+
+	if (ASIPHeroCharacter* HeroCharacter = Cast<ASIPHeroCharacter>(OwnerCharacter.Get()))
+	{
+		HeroCharacter->RefreshSandboxThreadSafeState();
+	}
 }
