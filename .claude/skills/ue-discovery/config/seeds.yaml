@@ -7,9 +7,9 @@
 # 实测状态（2026-06-22，代理 127.0.0.1:7890）：
 # - Bilibili 搜索 ✅（bili-cli，代理可用）
 # - YouTube ✅（yt-dlp，代理可用）— 但已剔除自动轮询
-# - Reddit ❌（需登录态）
+# - GitHub ✅（curl.exe + 公开仓库 API）
+# - Reddit ❌（需登录态，内容价值低）
 # - RSS ❌（CAPTCHA 拦截）
-# - GitHub ❌（API 超时）
 
 # === Bilibili 搜索（可自动轮询）===
 bilibili_search:
@@ -47,6 +47,26 @@ bilibili_search:
     limit: 10
     trusted: false
     note: 程序化内容生成
+
+# === GitHub 仓库（可自动轮询）===
+github_repos:
+  - name: GASDocumentation
+    url: https://github.com/tranek/GASDocumentation
+    trusted: true
+    watch: releases
+    note: GAS 圣经，5838 stars，直接对标项目 GAS 实现
+
+  - name: ALS-Community
+    url: https://github.com/PanicPetal/ALS-Community
+    trusted: true
+    watch: releases
+    note: 运动系统参考，2629 stars
+
+  - name: RealtimeMeshComponent
+    url: https://github.com/TriAxis-Games/RealtimeMeshComponent
+    trusted: false
+    watch: releases
+    note: 运行时 Mesh 生成，PCG 相关
 
 # === 关键词白名单（评分用）===
 # 标题/描述命中这些词加分

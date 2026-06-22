@@ -2,7 +2,7 @@
 """ue-discovery 主入口：读 seeds.yaml → 轮询种子源 → 去重 → 评分 → 写 queue.json
 
 设计 v2：视频爬取剔除，改为人工维护 video-links.md
-当前可用渠道：Bilibili 搜索（bili-cli + 代理）
+当前可用渠道：Bilibili 搜索（bili-cli + 代理）、GitHub（curl.exe + 公开仓库 API）
 """
 
 import argparse
@@ -126,6 +126,68 @@ def poll_bilibili_search(query_config: dict) -> list[dict]:
         return []
 
 
+def poll_github_repo(repo: dict) -> list[dict]:
+    """用 curl.exe + GitHub API 获取仓库信息"""
+    url = repo["url"]
+    parts = urlparse(url).path.strip("/").split("/")
+    if len(parts) < 2:
+        return []
+    owner_repo = f"{parts[0]}/{parts[1]}"
+
+    try:
+        # 获取仓库基本信息
+        result = subprocess.run(
+            ["curl.exe", "-s", f"https://api.github.com/repos/{owner_repo}",
+             "-H", "Accept: application/vnd.github.v3+json"],
+            capture_output=True, text=True, timeout=30, check=False
+        )
+        data = json.loads(result.stdout)
+        if "message" in data and data["message"] == "Not Found":
+            return []
+
+        items = [{
+            "title": data.get("name", owner_repo),
+            "url": data.get("html_url", url),
+            "author": owner_repo,
+            "author_url": url,
+            "platform": "github",
+            "source_type": "repo",
+            "published_at": data.get("updated_at"),
+            "duration_sec": None,
+            "trusted": repo.get("trusted", False),
+            "description": (data.get("description") or "")[:500],
+            "stars": data.get("stargazers_count", 0),
+        }]
+
+        # 获取最近 releases（如果有）
+        rel_result = subprocess.run(
+            ["curl.exe", "-s", f"https://api.github.com/repos/{owner_repo}/releases?per_page=5",
+             "-H", "Accept: application/vnd.github.v3+json"],
+            capture_output=True, text=True, timeout=30, check=False
+        )
+        releases = json.loads(rel_result.stdout)
+        if isinstance(releases, list):
+            for r in releases[:3]:
+                items.append({
+                    "title": f"{owner_repo} release {r.get('tag_name', '')} {r.get('name', '')}".strip(),
+                    "url": r.get("html_url", url),
+                    "author": owner_repo,
+                    "author_url": url,
+                    "platform": "github",
+                    "source_type": "release",
+                    "published_at": r.get("published_at"),
+                    "duration_sec": None,
+                    "trusted": repo.get("trusted", False),
+                    "description": (r.get("body") or "")[:500],
+                    "stars": data.get("stargazers_count", 0),
+                })
+
+        return items
+    except (subprocess.TimeoutExpired, FileNotFoundError, json.JSONDecodeError) as e:
+        print(f"[WARN] GitHub 轮询失败 {url}: {e}", file=sys.stderr)
+        return []
+
+
 def main():
     ap = argparse.ArgumentParser(description="UE 社区种子源发现")
     ap.add_argument("--seeds", required=True, help="seeds.yaml 路径")
@@ -140,17 +202,19 @@ def main():
 
     candidates = []
 
-    # Bilibili 搜索（当前唯一可用的自动轮询渠道）
+    # Bilibili 搜索
     for query_config in seeds.get("bilibili_search", []):
         candidates.extend(poll_bilibili_search(query_config))
+
+    # GitHub 仓库
+    for repo in seeds.get("github_repos", []):
+        candidates.extend(poll_github_repo(repo))
 
     # 占位日志（已剔除的渠道）
     for sub in seeds.get("reddit_subreddits", []):
         print(f"[INFO] Reddit 轮询需登录态，暂未启用: {sub['name']}", file=sys.stderr)
     for feed in seeds.get("rss_feeds", []):
         print(f"[INFO] RSS 轮询被 CAPTCHA 拦截，暂未启用: {feed['name']}", file=sys.stderr)
-    for repo in seeds.get("github_repos", []):
-        print(f"[INFO] GitHub 轮询 API 超时，暂未启用: {repo['name']}", file=sys.stderr)
 
     # 去重
     seen_urls = set()
