@@ -37,14 +37,18 @@
 
 ### 3.1 抓取层（复用 + 替换）
 
-| 职责 | 工具 | 状态 |
-|------|------|------|
-| 多平台 CLI 路由（Twitter / Reddit / B站 / 小红书 / Exa 语义搜索） | **Agent-Reach** | 新装入 |
-| CDP 浏览器交互（登录态操作、动态页面、点击导航、视频截帧） | **web-access** | 已装，保留 |
-| YouTube 下载 + 字幕 | yt-dlp（Agent-Reach 与 ai-notes 共用） | 已装 |
-| Bilibili 下载 | **bili-cli**（Agent-Reach 提供） | **必须切换**——ai-notes 的 yt-dlp 路线已被 B 站风控 412 封死（2026-06 实测） |
-| 视频转写 | ai-notes 的 `transcribe_faster_whisper.py`（faster-whisper large-v3 + CUDA） | 已装，保留 |
-| LaTeX/PDF 产出 | ai-notes 模板 + `render_pdf_qa.py` | 已装，保留 |
+**人机分工原则**：视频下载交给人做（高摩擦低智力密度：反爬/cookie/验证码/m4s 合并），Agent 接管下载后的所有环节（高智力密度：转写/结构化/归档/检索/产出）。
+
+| 职责 | 谁做 | 工具 | 状态 |
+|------|------|------|------|
+| YouTube 视频下载 | **人工** | yt-dlp / youtube-dl / 浏览器，人随意选 | 不纳入 Agent 管线 |
+| B 站视频下载 | **人工** | BilibiliDown GUI / yt-dlp / 浏览器，人随意选 | 不纳入 Agent 管线（BilibiliDown 是 Java GUI，Agent 调不了；2026-06 yt-dlp 被 B 站风控 412 封死，人用 GUI 反而最稳） |
+| 多平台读取（元数据/字幕/评论/搜索，不含下载） | Agent | **Agent-Reach** | 新装入 |
+| CDP 浏览器交互（登录态操作、动态页面、点击导航、视频截帧） | Agent | **web-access** | 已装，保留 |
+| 视频转写 | Agent | ai-notes 的 `transcribe_faster_whisper.py`（faster-whisper large-v3 + CUDA） | 已装，保留 |
+| LaTeX/PDF 产出 | Agent | ai-notes 模板 + `render_pdf_qa.py` | 已装，保留 |
+
+**下载环节的契约**：人下载完，把视频文件放进 `raw/<slug>/video.mp4`（或 `raw/<slug>/video.mkv` 等），Agent 从这里接手。`<slug>` 由 `ue-discovery` 在 `queue.json` 里预先分配，人按队列下载。
 
 ### 3.2 安检层
 
@@ -67,18 +71,25 @@
 │  种子源：YouTube 频道列表 / Bilibili UP 主列表 /              │
 │         Reddit r/UnrealEngine / X 上的 UE list / RSS         │
 │  去重 + UE 主题过滤 + 相关度评分                              │
-│  产出 queue.json                                             │
+│  产出 queue.json（含 <slug> 预分配）                          │
 └──────────────────┬──────────────────────────────────────────┘
                    ↓ queue.json
 ┌─────────────────────────────────────────────────────────────┐
-│  抓取层（复用 + 替换）                                        │
-│  - Agent-Reach: Twitter/Reddit/B站/小红书读取 + Exa 搜索      │
-│  - web-access: CDP 交互兜底（登录态操作、动态页面）           │
-│  - YouTube: yt-dlp 下载 + 字幕                               │
-│  - B站: bili-cli（不再走 yt-dlp）                             │
-│  - 转写: ai-notes/transcribe_faster_whisper.py               │
+│  人工下载（人做，Agent 不参与）                               │
+│  - YouTube: yt-dlp / youtube-dl / 浏览器，人随意选            │
+│  - B站: BilibiliDown GUI / 浏览器，人随意选                   │
+│  - 放进 raw/<slug>/video.mp4                                 │
+│  - 帖子/文章类原料：Agent-Reach 读取（无需人工）              │
 └──────────────────┬──────────────────────────────────────────┘
-                   ↓ raw/<slug>/{video,frames,transcript,html,metadata}
+                   ↓ raw/<slug>/{video.mp4, html, metadata}
+┌─────────────────────────────────────────────────────────────┐
+│  Agent 接手（自动）                                          │
+│  - Agent-Reach: 帖子/文章读取 + Exa 搜索（非视频原料）        │
+│  - web-access: CDP 交互兜底（登录态操作、动态页面）           │
+│  - 转写: ai-notes/transcribe_faster_whisper.py（视频原料）    │
+│  - 字幕: yt-dlp --write-sub（若视频原料已有字幕轨）           │
+└──────────────────┬──────────────────────────────────────────┘
+                   ↓ raw/<slug>/{transcript, frames, html, metadata}
 ┌─────────────────────────────────────────────────────────────┐
 │  ue-ingest (新)                                              │
 │  - 实体识别（作者/频道/插件/资产/项目）                       │
@@ -203,7 +214,7 @@ concepts: [[niagara-emitter-setup], [[lumen-pitfalls]]
 | 阶段 | 时长 | 产出 | 验收标准 |
 |------|------|------|---------|
 | **P0 设计冻结** | 1 天 | 本 spec 落盘 + commit | 用户 review 通过 |
-| **P1 安检+替换** | 2 天 | SkillSpector 装好并回扫现有 skill；Agent-Reach 装好；B 站下载切到 bili-cli 验证通 | `agent-reach doctor` 全绿；SkillSpector 对现有 skill 出报告 |
+| **P1 安检+替换** | 2 天 | SkillSpector 装好并回扫现有 skill；Agent-Reach 装好并扫过；Agent-Reach 的读取能力（非下载）验证通；faster-whisper CUDA 路径验证 | `agent-reach doctor` 全绿；SkillSpector 对 Agent-Reach 出报告且风险分可接受；`ctranslate2.get_cuda_device_count()` 返回 ≥1 |
 | **P2 discovery MVP** | 4 天 | `ue-discovery` skill + 1 个种子源（YouTube UE 频道列表）跑通 | `queue.json` 产出 10 条以上有效条目 |
 | **P3 ingest MVP** | 5 天 | `ue-ingest` skill + 对 P2 产出跑通 | `wiki/` 下生成 5+ 实体页、3+ 概念页 |
 | **P4 端到端跑批** | 3 天 | 用 1 个真实主题（如"UE5 Niagara 入门")跑 20 条原料 | 一份小型调研 PDF 产出（Docs/ResearchPipeline/ 下） |
@@ -216,7 +227,7 @@ MVP 边界：P0-P4（约 2 周）。P5/P6 视 MVP 结果再决定是否启动。
 
 1. **web-access 的 CDP 模式在 Windows 上未验证**——P1 需先跑 `check-deps.mjs` 确认。Agent-Reach 装好后，web-access 的多平台读取职责被接管，CDP 仅作兜底，风险降低。
 2. **faster-whisper CUDA 路径**——ai-notes 的 AGENTS.md 提到"本机可能 CPU-only Torch 而 CTranslate2 能用 CUDA"。P1 需验证 `ctranslate2.get_cuda_device_count()`，多小时视频 CPU 转写不可接受。
-3. **B 站 bili-cli 稳定性**——2026-06 实测 yt-dlp 被封，bili-cli 是当前工作路径，但作者 public-clis 组织的维护节奏未知。P1 需实测 5+ 视频验证。
+3. **人工下载是管线瓶颈**——视频下载交给人做，意味着队列规模要控制。ue-discovery 的 queue.json 应做优先级排序，让人能挑高价值的先下。单批建议 ≤20 条视频。
 4. **Obsidian 检索对中文分词**——P5 检索层可能需要引入 embed 索引，Obsidian 自带搜索对中文一般。
 5. **superpowers 的 HARD-GATE**——brainstorming skill 要求 spec 写完→用户 review→才转 writing-plans。本 spec 遵守此流程。
 6. **Agent-Reach 自称"纯 vibe coding"**——作者原话。P1 用 SkillSpector 扫它。
@@ -232,7 +243,8 @@ MVP 边界：P0-P4（约 2 周）。P5/P6 视 MVP 结果再决定是否启动。
 
 ## 9. 不做的事（YAGNI）
 
-- 不自建视频下载器（用 yt-dlp / bili-cli）
+- 不自建视频下载器（下载交给人做）
+- 不把视频下载纳入 Agent 管线（GUI 工具如 BilibiliDown Agent 调不了；CLI 下载器受平台风控波动大，维护成本高）
 - 不自建转写模型（用 faster-whisper）
 - 不自建搜索引擎（Exa + Obsidian 自带）
 - 不做实时监控（周期性轮询足够）
