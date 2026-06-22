@@ -1,0 +1,58 @@
+# UE 社区调研种子源
+# 每个条目产出一个候选列表，discover.py 轮询后去重+评分+排队
+#
+# ⚠️ 视频源（YouTube/Bilibili）已剔除自动轮询
+# 视频链接由人工维护，见 Docs/ResearchPipeline/video-links.md
+
+# === Reddit ===
+reddit_subreddits:
+  - name: r/UnrealEngine
+    url: https://www.reddit.com/r/UnrealEngine/
+    trusted: true
+    note: UE 主版块
+
+  - name: r/unrealengine5
+    url: https://www.reddit.com/r/unrealengine5/
+    trusted: false
+    note: UE5 专项
+
+# === X / Twitter ===
+x_lists:
+  # 占位：用户补充 UE 开发者 list
+  # - name: UE Devs
+  #   url: https://x.com/i/lists/xxx
+  #   trusted: true
+
+# === RSS ===
+rss_feeds:
+  - name: Unreal Engine Blog
+    url: https://www.unrealengine.com/en-US/blog/feed
+    trusted: true
+
+  - name: Epic Games Dev Blog
+    url: https://dev.epicgames.com/community/unreal-engine/learning?source=rss
+    trusted: true
+
+# === GitHub ===
+github_repos:
+  - name: EpicGames / UnrealEngine
+    url: https://github.com/EpicGames/UnrealEngine
+    trusted: true
+    watch: releases
+    note: 官方引擎仓库
+
+  - name: GASP Motion Matching 示例
+    url: https://github.com/nicktivio/gasp-motion-matching
+    trusted: false
+    watch: releases
+    note: 项目使用的 GASP 资源
+
+# === 关键词白名单（评分用）===
+# 标题/描述命中这些词加分
+keywords:
+  core: [Unreal, UE5, UE4, 虚幻]
+  systems: [GAS, GameplayAbilitySystem, AbilitySystem, Motion Matching, PoseSearch, Niagara, PCG, Lyra, GameplayCue]
+  animation: [AnimBP, AnimBlueprint, Animation, Montage, BlendSpace, StateMachine, Retarget, IK]
+  combat: [combat, 战斗, action RPG, melee, combo, weapon]
+  cpp: [C++, plugin, module, UObject, Actor, Component]
+  pipeline: [build, cooking, packaging, optimization, performance]
