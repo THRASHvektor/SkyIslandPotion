@@ -3,49 +3,50 @@
 #
 # ⚠️ 视频源（YouTube/Bilibili）已剔除自动轮询
 # 视频链接由人工维护，见 Docs/ResearchPipeline/video-links.md
+#
+# 实测状态（2026-06-22，代理 127.0.0.1:7890）：
+# - Bilibili 搜索 ✅（bili-cli，代理可用）
+# - YouTube ✅（yt-dlp，代理可用）— 但已剔除自动轮询
+# - Reddit ❌（需登录态）
+# - RSS ❌（CAPTCHA 拦截）
+# - GitHub ❌（API 超时）
 
-# === Reddit ===
-reddit_subreddits:
-  - name: r/UnrealEngine
-    url: https://www.reddit.com/r/UnrealEngine/
+# === Bilibili 搜索（可自动轮询）===
+bilibili_search:
+  - name: UE5 GAS 教程
+    query: "UE5 GAS"
+    type: video
+    limit: 10
     trusted: true
-    note: UE 主版块
+    note: Gameplay Ability System 中文教程
 
-  - name: r/unrealengine5
-    url: https://www.reddit.com/r/unrealengine5/
+  - name: UE5 动画蓝图
+    query: "UE5 AnimBP 动画蓝图"
+    type: video
+    limit: 10
+    trusted: true
+    note: 动画系统中文教程
+
+  - name: UE5 战斗系统
+    query: "UE5 战斗系统 action RPG"
+    type: video
+    limit: 10
+    trusted: true
+    note: 战斗系统设计
+
+  - name: UE5 Niagara 特效
+    query: "UE5 Niagara 特效"
+    type: video
+    limit: 10
+    trusted: true
+    note: 特效系统
+
+  - name: UE5 PCG 程序化
+    query: "UE5 PCG 程序化生成"
+    type: video
+    limit: 10
     trusted: false
-    note: UE5 专项
-
-# === X / Twitter ===
-x_lists:
-  # 占位：用户补充 UE 开发者 list
-  # - name: UE Devs
-  #   url: https://x.com/i/lists/xxx
-  #   trusted: true
-
-# === RSS ===
-rss_feeds:
-  - name: Unreal Engine Blog
-    url: https://www.unrealengine.com/en-US/blog/feed
-    trusted: true
-
-  - name: Epic Games Dev Blog
-    url: https://dev.epicgames.com/community/unreal-engine/learning?source=rss
-    trusted: true
-
-# === GitHub ===
-github_repos:
-  - name: EpicGames / UnrealEngine
-    url: https://github.com/EpicGames/UnrealEngine
-    trusted: true
-    watch: releases
-    note: 官方引擎仓库
-
-  - name: GASP Motion Matching 示例
-    url: https://github.com/nicktivio/gasp-motion-matching
-    trusted: false
-    watch: releases
-    note: 项目使用的 GASP 资源
+    note: 程序化内容生成
 
 # === 关键词白名单（评分用）===
 # 标题/描述命中这些词加分
