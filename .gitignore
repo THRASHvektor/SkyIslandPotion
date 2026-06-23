@@ -71,5 +71,9 @@ diagrams/
 # Specific large content (optional)
 # ============================
 Client/SIP/Content/Characters/MonsterForSurvivalGame/
+Client/SIP/Content/CozyNature/
+Client/SIP/Content/Mage/
 Client/SIP/Content/MetaHumans/
+Client/SIP/Content/SlashFX_SoftTofu/
+Client/SIP/Content/StylizedEnvironment/
 Client/SIP/soft-ue-cli/
