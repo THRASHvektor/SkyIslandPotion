@@ -1,0 +1,75 @@
+# SkyIslandPotion .gitignore
+# UE5.4 project — SIP
+
+# ============================
+# Unreal Engine
+# ============================
+Binaries/
+Intermediate/
+DerivedDataCache/
+Saved/
+Build/
+*.sln
+*.xcworkspace
+*.xcodeproj
+
+# ============================
+# IDE / Editors
+# ============================
+.vs/
+.idea/
+.vscode/
+*.swp
+*.swo
+*.suo
+*.user
+*.DotSettings.user
+*.DotSettings
+
+# ============================
+# OS junk
+# ============================
+Thumbs.db
+.DS_Store
+Desktop.ini
+~$*
+
+# ============================
+# Python
+# ============================
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+
+# ============================
+# Claude / AI workspace
+# ============================
+.claude/
+.obsidian/
+Client/SIP/.claude/
+Client/SIP/.soft-ue-bridge/
+Client/SIP/.mcp.json
+
+# ============================
+# Documentation
+# ============================
+Docs/
+
+# ============================
+# External content (not SIP)
+# ============================
+External/
+Reports/
+Scripts/
+diagrams/
+
+# ============================
+# Specific large content (optional)
+# ============================
+Client/SIP/Content/Characters/MonsterForSurvivalGame/
+Client/SIP/Content/MetaHumans/
+Client/SIP/soft-ue-cli/

@@ -124,6 +124,7 @@ private:
 	 * 这些状态需要的转向手感更接近战斗，而不是普通冰面移动。
 	 */
 	bool IsIceRuneDaggerCombatSteeringActive() const;
+	bool IsAttackMontageActive() const;
 
 	// 在玩法开始后解析并缓存角色、ASC 和移动组件。
 	void CacheOwnerReferences();
@@ -192,6 +193,12 @@ private:
 
 	UPROPERTY(EditDefaultsOnly, Category = "SIP|Sandbox|Locomotion|Ice", meta = (ClampMin = "0.01", ClampMax = "1.0"))
 	float IceRotationRateMultiplier = 0.65f;
+
+	// 冰面冲刺速度上限。
+	// 防止角色达到实际轨迹与 PoseSearch 动画轨迹严重不匹配的高速区，
+	// 在该速度下 trajectory 分歧足够小，PoseSearch 可以稳定选到合理候选。
+	UPROPERTY(EditDefaultsOnly, Category = "SIP|Sandbox|Locomotion|Ice", meta = (ClampMin = "0.0"))
+	float IceSprintSpeedCap = 450.0f;
 
 	UPROPERTY(EditDefaultsOnly, Category = "SIP|Sandbox|Locomotion|Ice")
 	bool bStartOnIceForDebug = false;

@@ -421,6 +421,11 @@ void ASIPHeroCharacter::Landed(const FHitResult& Hit)
 
 	Super::Landed(Hit);
 
+	if (HeroAnimationBridgeComponent)
+	{
+		HeroAnimationBridgeComponent->NotifyLanded();
+	}
+
 	if (UWorld* World = GetWorld())
 	{
 		World->GetTimerManager().SetTimerForNextTick(this, &ASIPHeroCharacter::ClearJustLandedFlag);

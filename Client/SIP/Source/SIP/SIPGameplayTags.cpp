@@ -129,6 +129,11 @@ namespace SIPGameplayTags
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Zone_Electrified, "Zone.Electrified", "Zone is electrified - enemies in area are stunned.");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Zone_Bloomed,     "Zone.Bloomed",     "Zone has bloomed - new resources spawned.");
 
+	// ==================== PoseSearch 数据库标签 ====================
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(PoseSearch_Database_Default, "PoseSearch.Database.Default", "Default locomotion pose search database route.");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(PoseSearch_Database_IceLocomotion, "PoseSearch.Database.IceLocomotion", "Ice locomotion pose search database route.");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(PoseSearch_Database_IceCombat, "PoseSearch.Database.IceCombat", "Ice combat pose search database route.");
+
 	// ==================== 冷却标签 ====================
 	// 用途：标识技能的冷却状态
 	// 使用场景：加到对应的cooldown GE里，GA会自动检查这个标签来判断技能是否在冷却中

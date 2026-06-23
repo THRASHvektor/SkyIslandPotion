@@ -96,12 +96,30 @@ public:
 	FGameplayTag GetDesiredPoseSearchDatabaseTag() const;
 
 	/**
+	 * 当语义数据库标签是一个有效且非 Default 的 override 时返回 true。
+	 * 这个函数服务于 ABP 的 Update_MotionMatching 入口分支，
+	 * 让图层可以在未来显式接入 IceLocomotion / IceCombat 数据库切换。
+	 */
+	UFUNCTION(BlueprintPure, Category = "SIP|Animation|Combat", meta = (BlueprintThreadSafe))
+	bool HasSemanticPoseSearchDatabaseTagOverride() const;
+
+	/**
 	 * ABP 的 Update_MotionMatching 中 Get MMInterrupt Mode 节点调用此函数。
 	 * 抑制期间返回 DoNotInterrupt，让 MM 继续播放当前动画而不重新搜索；
 	 * 非抑制期间返回 InterruptOnDatabaseChange，允许 Chooser 切库时中断。
 	 */
 	UFUNCTION(BlueprintPure, Category = "SIP|Animation|Combat", meta = (BlueprintThreadSafe))
 	EPoseSearchInterruptMode GetMMInterruptMode() const;
+
+	/**
+	 * ABP 的 OffsetRootBone 节点拼接用。
+	 *
+	 * 当前始终返回 false：不动态切换 OffsetRootBone 模式。
+	 * Release 会将累积偏移归零，切回 Interpolate 瞬间产生硬跳。
+	 * 保持 Interpolate/Accumulate 让 OffsetRootBone 内部 halflife 自然消化位差。
+	 */
+	UFUNCTION(BlueprintPure, Category = "SIP|Animation|Combat", meta = (BlueprintThreadSafe))
+	bool ShouldReleaseOffsetRootBone() const;
 
 protected:
 	/**
@@ -204,8 +222,20 @@ protected:
 	bool bShouldSuppressMotionMatching = false;
 
 	UPROPERTY(Transient, BlueprintReadWrite, Category = "SIP|Animation|Combat")
+	bool bShouldReleaseOffsetRootBone = false;
+
+	/**
+	 * MM 抑制解除后的一次性 ForceInterrupt 标记。
+	 * 在 GetMMInterruptMode() 读取后自动清除。
+	 */
+	mutable bool bMMForceInterruptPending = false;
+
+	UPROPERTY(Transient, BlueprintReadWrite, Category = "SIP|Animation|Combat")
 	ESIPSemanticLocomotionMode SemanticLocomotionMode = ESIPSemanticLocomotionMode::Default;
 
 	UPROPERTY(Transient, BlueprintReadWrite, Category = "SIP|Animation|Combat")
 	FGameplayTag DesiredPoseSearchDatabaseTag;
+
+	UPROPERTY(Transient)
+	FGameplayTag LastLoggedDesiredPoseSearchDatabaseTag;
 };

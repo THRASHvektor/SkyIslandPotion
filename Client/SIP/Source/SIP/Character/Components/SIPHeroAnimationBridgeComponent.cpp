@@ -93,6 +93,16 @@ void USIPHeroAnimationBridgeComponent::TickComponent(float DeltaTime, ELevelTick
 		bIsJumping = false;
 	}
 
+	// 累计 Falling 时长，用于在 ShouldSuppressMotionMatching 中过滤冰面微型落差。
+	if (bIsFalling)
+	{
+		FallingDuration += DeltaTime;
+	}
+	else
+	{
+		FallingDuration = 0.0f;
+	}
+
 	UpdateCombatActionDescriptor();
 	ClearCombatStateIfIdle();
 }
@@ -224,11 +234,21 @@ void USIPHeroAnimationBridgeComponent::CancelAttackAnimation()
 	ResetCombatBodyStateLock();
 	SetCombatActionDescriptor(FSIPCombatActionDescriptor());
 	ClearCombatStateIfIdle();
+
+	// 安全网：确保 RotationRate 在攻击取消后恢复。
+	// SetCastPhaseTag(empty) 通常会触发 RefreshRotationMode，
+	// 但如果 CastPhaseTag 已经是空的则会提前返回，漏掉旋转恢复。
+	if (ASIPHeroCharacter* HeroCharacter = Cast<ASIPHeroCharacter>(OwnerCharacter.Get()))
+	{
+		if (USIPSandboxLocomotionComponent* LocomotionComponent = HeroCharacter->GetSandboxLocomotionComponent())
+		{
+			LocomotionComponent->HandleExternalSemanticStateChanged();
+		}
+	}
 }
 
 void USIPHeroAnimationBridgeComponent::FinishAttackAnimation(const bool bQueuedBufferedFollowUp)
 {
-	const bool bWasGoldenPathActive = CurrentCombatActionDescriptor.bGoldenPathActive || bGoldenPathWasActiveDuringAttack;
 	bGoldenPathWasActiveDuringAttack = false;
 
 	CancelAnimationEvent(SIPGameplayTags::Event_Animation_Attack_HitWindow_Start);
@@ -243,9 +263,17 @@ void USIPHeroAnimationBridgeComponent::FinishAttackAnimation(const bool bQueuedB
 	ResetCombatBodyStateLock();
 	UpdateCombatActionDescriptor();
 
-	// 攻击结束后延长 MM 抑制一小段时间，
-	// 防止 Motion Matching 恢复时把角色弹回攻击前的位置。
-	if (bWasGoldenPathActive && !bQueuedBufferedFollowUp)
+	// 先清理战斗状态：有语义尾巴则启动 TTL，无尾巴则移除 State_Combat。
+	// 必须在 grace 之前执行——否则无尾巴分支的 ClearPostAttackMMSuppressionGrace()
+	// 会在同一帧内把刚设好的 grace 立刻清掉。
+	ClearCombatStateIfIdle();
+
+	// 连招衔接时保持短暂 MM 抑制，避免 State_Combat_Attacking 被移除后、
+	// 下一招设置前的间隙让 MM 闪烁搜索一帧产生"小碎步"。
+	// 非连招结束时 **不设 grace**——让 MM 在 DefaultSlot BlendOut 期间立即重新搜索，
+	// 配合 bAlwaysUpdateSourcePose=true，DefaultSlot 可以平滑地从蒙太奇混合到
+	// MM 的当前最优匹配，而不是等 BlendOut 结束后才放行产生硬跳。
+	if (bQueuedBufferedFollowUp)
 	{
 		bPostAttackMMSuppressionGraceActive = true;
 		if (UWorld* World = GetWorld())
@@ -253,14 +281,20 @@ void USIPHeroAnimationBridgeComponent::FinishAttackAnimation(const bool bQueuedB
 			World->GetTimerManager().ClearTimer(PostAttackMMSuppressionGraceHandle);
 			FTimerDelegate Delegate;
 			Delegate.BindUObject(this, &USIPHeroAnimationBridgeComponent::OnPostAttackMMSuppressionGraceExpired);
-			const float GraceSeconds = CombatSemanticProfile
-				? FMath::Max(CombatSemanticProfile->PostAttackMMSuppressionGraceSeconds, 0.05f)
-				: PostAttackMMSuppressionGraceSeconds;
-			World->GetTimerManager().SetTimer(PostAttackMMSuppressionGraceHandle, Delegate, GraceSeconds, false);
+			// 使用配置值（默认 2.0s），覆盖 DynamicBlendOut 上限 0.65s，
+			// 避免 BlendOut 期间 MM 恢复造成单帧骨骼跳动。
+			World->GetTimerManager().SetTimer(PostAttackMMSuppressionGraceHandle, Delegate, PostAttackMMSuppressionGraceSeconds, false);
 		}
 	}
 
-	ClearCombatStateIfIdle();
+	// 安全网：确保 RotationRate 在攻击结束后恢复。
+	if (ASIPHeroCharacter* HeroCharacter = Cast<ASIPHeroCharacter>(OwnerCharacter.Get()))
+	{
+		if (USIPSandboxLocomotionComponent* LocomotionComponent = HeroCharacter->GetSandboxLocomotionComponent())
+		{
+			LocomotionComponent->HandleExternalSemanticStateChanged();
+		}
+	}
 }
 
 void USIPHeroAnimationBridgeComponent::CancelThrowAnimation()
@@ -440,7 +474,7 @@ void USIPHeroAnimationBridgeComponent::UpdateCombatActionDescriptor()
 	SetCombatActionDescriptor(SIPCombatSemantic::ResolveIceRuneDaggerGoldenPath(FeatureVector, ResolutionContext));
 
 	// 延迟锁定：如果 GA 激活时速度瞬时为 0（traversal/落地瞬间），
-	// 初始解析未能構建语义描述符导致 lock 未设置。
+	// 初始解析未能构建语义描述符导致 lock 未设置。
 	// 下一帧速度恢复后解析出黄金链，此时补上 lock，
 	// 避免语义状态随速度波动在后续帧被冲掉。
 	if (HasAnimationStateTag(SIPGameplayTags::State_Combat_Attacking) &&
@@ -613,6 +647,8 @@ void USIPHeroAnimationBridgeComponent::ClearCombatStateIfIdle()
 			SetWeaponModuleTag(FGameplayTag());
 			ResetCombatBodyStateLock();
 			RemoveAnimationStateTag(SIPGameplayTags::State_Combat);
+			// 无语义尾巴时，攻击蒙太奇已经完全退场，不需要继续保留 MM grace。
+			ClearPostAttackMMSuppressionGrace();
 		}
 		else
 		{
@@ -755,11 +791,20 @@ void USIPHeroAnimationBridgeComponent::ResetCombatBodyStateLock()
 
 bool USIPHeroAnimationBridgeComponent::ShouldSuppressMotionMatching() const
 {
-	// 在活跃的黄金链攻击蒙太奇播放期间抑制 MM
-	if (HasAnimationStateTag(SIPGameplayTags::State_Combat_Attacking) &&
-		CurrentCombatActionDescriptor.bGoldenPathActive)
+	if (bCombatLandingRecoveryActive)
 	{
-		return true;
+		return false;
+	}
+
+	// 任何活跃的全身攻击蒙太奇都必须压制 MM，避免 PoseSearch 与 DefaultSlot 争抢全身骨骼。
+	// 唯一例外是角色持续处于 Falling 状态超过阈值，此时放行 MM，
+	// 让 GASP 的 InAir / Landing 数据库接管着陆过渡。
+	// 低于阈值的微型落差（冰面不平地形导致的 1-2 帧 Falling 抖动）不放行，
+	// 防止攻击蒙太奇期间 MM 闪烁激活产生抽搐。
+	static constexpr float MinFallingDurationForMMRelease = 0.15f;
+	if (HasAnimationStateTag(SIPGameplayTags::State_Combat_Attacking))
+	{
+		return !(bIsFalling && FallingDuration >= MinFallingDurationForMMRelease);
 	}
 
 	// 攻击蒙太奇结束后的短暂宽限期，
@@ -846,5 +891,51 @@ void USIPHeroAnimationBridgeComponent::OnPostAttackMMSuppressionGraceExpired()
 	if (ASIPHeroCharacter* HeroCharacter = Cast<ASIPHeroCharacter>(OwnerCharacter.Get()))
 	{
 		HeroCharacter->RefreshSandboxThreadSafeState();
+	}
+}
+
+void USIPHeroAnimationBridgeComponent::NotifyMontageFullyEnded()
+{
+	if (!bPostAttackMMSuppressionGraceActive)
+	{
+		return;
+	}
+
+	ClearPostAttackMMSuppressionGrace();
+
+	if (ASIPHeroCharacter* HeroCharacter = Cast<ASIPHeroCharacter>(OwnerCharacter.Get()))
+	{
+		HeroCharacter->RefreshSandboxThreadSafeState();
+	}
+}
+
+void USIPHeroAnimationBridgeComponent::NotifyLanded()
+{
+	const bool bInCombatAnimation =
+		HasAnimationStateTag(SIPGameplayTags::State_Combat_Attacking) ||
+		bPostAttackMMSuppressionGraceActive;
+
+	if (!bInCombatAnimation)
+	{
+		return;
+	}
+
+	bCombatLandingRecoveryActive = true;
+
+	if (UWorld* World = GetWorld())
+	{
+		World->GetTimerManager().ClearTimer(CombatLandingRecoveryHandle);
+		World->GetTimerManager().SetTimer(
+			CombatLandingRecoveryHandle,
+			FTimerDelegate::CreateWeakLambda(this, [this]()
+			{
+				bCombatLandingRecoveryActive = false;
+				if (ASIPHeroCharacter* HC = Cast<ASIPHeroCharacter>(OwnerCharacter.Get()))
+				{
+					HC->RefreshSandboxThreadSafeState();
+				}
+			}),
+			0.30f,
+			false);
 	}
 }

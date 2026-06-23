@@ -108,6 +108,7 @@ void USIPSandboxLocomotionComponent::SetIceSurfaceActive(const bool bEnabled)
 	SetLooseStateTag(SIPGameplayTags::State_Surface_Ice, bIceSurfaceActive);
 	RefreshSurfaceMovementProfile();
 	RefreshRotationMode();
+	RefreshWalkSpeedOverride();
 	SyncOwnerAnimationState();
 }
 
@@ -177,6 +178,18 @@ ESIPSandboxDesiredGait USIPSandboxLocomotionComponent::GetDesiredGait() const
 		return ESIPSandboxDesiredGait::Sprint;
 	}
 
+	// 没有明确意图时，用实际速度决定步态。
+	// 默认返回 Run 会导致 Chooser 在角色静止时仍选择跑动数据库，
+	// Motion Matching 选不到匹配的 idle 动画 → "原地走路"。
+	if (const ASIPCharacter* Character = OwnerCharacter.Get())
+	{
+		const float GroundSpeed2D = Character->GetVelocity().Size2D();
+		if (GroundSpeed2D < 10.0f)
+		{
+			return ESIPSandboxDesiredGait::Walk;
+		}
+	}
+
 	return ESIPSandboxDesiredGait::Run;
 }
 
@@ -229,6 +242,18 @@ void USIPSandboxLocomotionComponent::RefreshRotationMode()
 
 	if (!Character || !MovementComponent)
 	{
+		return;
+	}
+
+	// While a full-body attack montage is active, freeze external rotation so the
+	// montage keeps ownership of facing and root presentation. This prevents
+	// controller / movement driven spinning from dragging the montage off course.
+	if (IsAttackMontageActive())
+	{
+		Character->bUseControllerRotationYaw = false;
+		MovementComponent->bUseControllerDesiredRotation = false;
+		MovementComponent->bOrientRotationToMovement = false;
+		MovementComponent->RotationRate = FRotator::ZeroRotator;
 		return;
 	}
 
@@ -289,7 +314,7 @@ void USIPSandboxLocomotionComponent::RefreshWalkSpeedOverride()
 		return;
 	}
 
-	const bool bShouldOverrideMoveSpeed = bWalkIntent || bSprintIntent || IsFlaskRigCasting();
+	const bool bShouldOverrideMoveSpeed = bWalkIntent || bSprintIntent || IsFlaskRigCasting() || bIceSurfaceActive;
 	if (bShouldOverrideMoveSpeed)
 	{
 		if (!bWalkSpeedOverridden)
@@ -310,6 +335,14 @@ void USIPSandboxLocomotionComponent::RefreshWalkSpeedOverride()
 		if (IsFlaskRigCasting())
 		{
 			DesiredMoveSpeed = FMath::Min(DesiredMoveSpeed, FlaskRigCastSpeedCap);
+		}
+
+		// 冰面物理参数让实际轨迹大幅偏离 Dense 动画的烘焙轨迹，
+		// 速度越高分歧越大，PoseSearch 在高速区找不到稳定候选导致抽搐。
+		// 限速到 trajectory 分歧可接受的范围。
+		if (bIceSurfaceActive)
+		{
+			DesiredMoveSpeed = FMath::Min(DesiredMoveSpeed, IceSprintSpeedCap);
 		}
 
 		MovementComponent->MaxWalkSpeed = DesiredMoveSpeed;
@@ -369,6 +402,17 @@ bool USIPSandboxLocomotionComponent::IsIceRuneDaggerCombatSteeringActive() const
 		AbilitySystemComponent->HasMatchingGameplayTag(SIPGameplayTags::State_Combat_ActionFamily_DriftSlash) ||
 		AbilitySystemComponent->HasMatchingGameplayTag(SIPGameplayTags::State_Combat_ActionFamily_DriftTurnSlash) ||
 		AbilitySystemComponent->HasMatchingGameplayTag(SIPGameplayTags::State_Combat_ActionFamily_DelayedRestart);
+}
+
+bool USIPSandboxLocomotionComponent::IsAttackMontageActive() const
+{
+	const USIPAbilitySystemComponent* AbilitySystemComponent = OwnerAbilitySystemComponent.Get();
+	if (!AbilitySystemComponent)
+	{
+		return false;
+	}
+
+	return AbilitySystemComponent->HasMatchingGameplayTag(SIPGameplayTags::State_Combat_Attacking);
 }
 
 // 用于把移动表现标签镜像同步到拥有者 ASC 的辅助函数。

@@ -48,7 +48,7 @@ struct FSIPAttackComboEntry
 	TSoftObjectPtr<UAnimSequenceBase> Animation;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Combo")
-	FName SlotName = TEXT("DefaultSlot");
+	FName SlotName = TEXT("FullBody_Combat");
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Combo", meta = (ClampMin = "0.0"))
 	float HitWindowStartDelay = 0.15f;
@@ -246,6 +246,13 @@ protected:
 	 * 处理中断，并防止桥接层残留过期战斗状态。
 	 */
 	void OnAttackAnimationInterrupted();
+
+	UFUNCTION()
+	/**
+	 * 蒙太奇 BlendOut 开始时触发，提前通知桥接层退出战斗状态，
+	 * 让 PostAttackMMSuppression grace 与 BlendOut 并行运行。
+	 */
+	void OnAttackAnimationBlendingOut();
 
 	UFUNCTION()
 	/**

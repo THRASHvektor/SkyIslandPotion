@@ -13,5 +13,6 @@ ASIPGameMode::ASIPGameMode()
 	{
 		DefaultPawnClass = PlayerPawnBPClass.Class;
 	}*/
-	
 }
+
+

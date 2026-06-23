@@ -155,6 +155,12 @@ namespace SIPGameplayTags
 	SIP_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Zone_Electrified);   // 感电状态
 	SIP_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Zone_Bloomed);       // 绽放状态
 
+	// ==================== PoseSearch 数据库标签 ====================
+	// 用途：让语义层/AnimBP/Chooser 对 MM 数据库选择拥有共享命名空间
+	SIP_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(PoseSearch_Database_Default);
+	SIP_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(PoseSearch_Database_IceLocomotion);
+	SIP_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(PoseSearch_Database_IceCombat);
+
 	// ==================== 冷却标签 ====================
 	// 用途：标识技能的冷却状态
 	// 使用场景：加到对应的cooldown GE里，GA会自动检查这个标签来判断技能是否在冷却中

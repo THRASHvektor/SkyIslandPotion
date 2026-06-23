@@ -8,6 +8,7 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "PoseSearch/PoseSearchLibrary.h"
 #include "SIPGameplayTags.h"
+#include "SIPLogCategory.h"
 
 /**
  * SIPHeroAnimInstance.cpp 实现主角动画实例基础类。
@@ -20,7 +21,7 @@
 void USIPHeroAnimInstance::NativeInitializeAnimation()
 {
 	// 在 BlueprintInitializeAnimation 触发前先准备好权威状态，
-	// 避免子 AnimBP 需要自己补写移动/战斗缓存。
+	// 避免子AnimBP 需要自己补写移动/战斗缓存。
 	CacheAnimationReferences();
 	SyncFromAnimationBridge();
 
@@ -201,6 +202,13 @@ FGameplayTag USIPHeroAnimInstance::GetDesiredPoseSearchDatabaseTag() const
 	return DesiredPoseSearchDatabaseTag;
 }
 
+bool USIPHeroAnimInstance::HasSemanticPoseSearchDatabaseTagOverride() const
+{
+	return
+		DesiredPoseSearchDatabaseTag.IsValid() &&
+		!DesiredPoseSearchDatabaseTag.MatchesTagExact(SIPGameplayTags::PoseSearch_Database_Default);
+}
+
 EPoseSearchInterruptMode USIPHeroAnimInstance::GetMMInterruptMode() const
 {
 	// 抑制期间：不中断当前动画，MM 继续播放存量结果，不做新搜索
@@ -208,8 +216,20 @@ EPoseSearchInterruptMode USIPHeroAnimInstance::GetMMInterruptMode() const
 	{
 		return EPoseSearchInterruptMode::DoNotInterrupt;
 	}
+	// 抑制刚解除的第一帧：强制重新搜索，
+	// 避免 MM 继续播放蒙太奇期间累积的陈旧动画帧。
+	if (bMMForceInterruptPending)
+	{
+		bMMForceInterruptPending = false;
+		return EPoseSearchInterruptMode::ForceInterrupt;
+	}
 	// 正常情况：Chooser 切库时中断旧动画重新搜索
 	return EPoseSearchInterruptMode::InterruptOnDatabaseChange;
+}
+
+bool USIPHeroAnimInstance::ShouldReleaseOffsetRootBone() const
+{
+	return bShouldReleaseOffsetRootBone;
 }
 
 /**
@@ -257,7 +277,19 @@ void USIPHeroAnimInstance::SyncFromAnimationBridge()
 		bShouldUseMomentumWarpForCombatAction = CombatDescriptor.bUseMomentumWarp;
 		CurrentCombatRecoveryBias = CombatDescriptor.RecoveryBias;
 		CurrentCombatChainWindowPolicy = CombatDescriptor.ChainWindowPolicy;
+		const bool bPreviousSuppressMM = bShouldSuppressMotionMatching;
 		bShouldSuppressMotionMatching = AnimationBridge->ShouldSuppressMotionMatching();
+		// 当 MM 抑制刚刚解除时（战斗→移动过渡），置一个一次性标记，
+		// 让 GetMMInterruptMode 在下一次求值中返回 ForceInterrupt，
+		// 确保 PoseSearch 立即重新搜索最优匹配而不是继续播放陈旧动画。
+		if (bPreviousSuppressMM && !bShouldSuppressMotionMatching)
+		{
+			bMMForceInterruptPending = true;
+		}
+		// MM 抑制刚解除时，强制 OffsetRootBone 释放一帧，
+		// 把战斗期间累积的根骨骼位移归零，避免角色瞬移回原点。
+		// 其余帧保持 Interpolate/Accumulate，让 halflife 自然消化位差。
+		bShouldReleaseOffsetRootBone = (bPreviousSuppressMM && !bShouldSuppressMotionMatching);
 		SemanticLocomotionMode = AnimationBridge->GetSemanticLocomotionMode();
 		if (const USIPCombatSemanticProfile* Profile = AnimationBridge->GetCombatSemanticProfile())
 		{
@@ -267,6 +299,21 @@ void USIPHeroAnimInstance::SyncFromAnimationBridge()
 		{
 			DesiredPoseSearchDatabaseTag = FGameplayTag();
 		}
+
+		if (!DesiredPoseSearchDatabaseTag.MatchesTagExact(LastLoggedDesiredPoseSearchDatabaseTag))
+		{
+			UE_LOG(
+				LogSIP,
+				Log,
+				TEXT("[PoseSearchSemantic] DesiredDBTag=%s Mode=%d SuppressMM=%s Weapon=%s BodyState=%s"),
+				DesiredPoseSearchDatabaseTag.IsValid() ? *DesiredPoseSearchDatabaseTag.ToString() : TEXT("None"),
+				static_cast<int32>(SemanticLocomotionMode),
+				bShouldSuppressMotionMatching ? TEXT("Y") : TEXT("N"),
+				CurrentWeaponModuleTag.IsValid() ? *CurrentWeaponModuleTag.ToString() : TEXT("None"),
+				CurrentCombatBodyStateTag.IsValid() ? *CurrentCombatBodyStateTag.ToString() : TEXT("None"));
+			LastLoggedDesiredPoseSearchDatabaseTag = DesiredPoseSearchDatabaseTag;
+		}
+
 		UpdateCombatSemanticCache();
 		return;
 	}
@@ -335,6 +382,9 @@ void USIPHeroAnimInstance::ResetAnimationState()
 	bShouldPreferCombatSteering = false;
 	CombatSemanticLeanScale = 1.0f;
 	bShouldSuppressMotionMatching = false;
+	bShouldReleaseOffsetRootBone = false;
+	bMMForceInterruptPending = false;
 	SemanticLocomotionMode = ESIPSemanticLocomotionMode::Default;
 	DesiredPoseSearchDatabaseTag = FGameplayTag();
+	LastLoggedDesiredPoseSearchDatabaseTag = FGameplayTag();
 }

@@ -62,7 +62,7 @@ namespace
 	 */
 	const TArray<FSIPAttackComboEntry>& GetDefaultAttackComboEntries()
 	{
-		return USIPAttackComboDataAsset::BuildRuneDaggerAttackComboEntriesV1();
+		return USIPAttackComboDataAsset::BuildRuneDaggerAttackComboEntriesV2();
 	}
 
 	/**
@@ -181,7 +181,13 @@ void USIPGameplayAbility_Attack::ActivateAbility(
 		HeroCharacter->ClearBufferedAttackInput();
 		if (bDebugComboFlow)
 		{
-			const int32 RequestedComboIndex = HeroCharacter->GetResolvedAttackComboIndex(ComboResetWindowSeconds);
+			// 注意：GetResolvedAttackComboIndex 有副作用（超时时会重置 ComboIndex），
+			// 必须使用与实际连招解析相同的窗口值，避免 debug 路径误重置状态。
+			const float ActiveResetWindow =
+				AttackComboDataAsset
+					? AttackComboDataAsset->ComboResetWindowSeconds
+					: ComboResetWindowSeconds;
+			const int32 RequestedComboIndex = HeroCharacter->GetResolvedAttackComboIndex(ActiveResetWindow);
 			EmitAttackDebug(
 				this,
 				FString::Printf(
@@ -405,6 +411,7 @@ bool USIPGameplayAbility_Attack::StartAnimationDrivenAttack(ASIPCharacter* Sourc
 			AttackMontageTask->OnCompleted.AddDynamic(this, &USIPGameplayAbility_Attack::OnAttackAnimationCompleted);
 			AttackMontageTask->OnInterrupted.AddDynamic(this, &USIPGameplayAbility_Attack::OnAttackAnimationInterrupted);
 			AttackMontageTask->OnCancelled.AddDynamic(this, &USIPGameplayAbility_Attack::OnAttackAnimationInterrupted);
+			AttackMontageTask->OnBlendOut.AddDynamic(this, &USIPGameplayAbility_Attack::OnAttackAnimationBlendingOut);
 			AttackMontageTask->ReadyForActivation();
 		}
 	}
@@ -459,14 +466,17 @@ UAnimMontage* USIPGameplayAbility_Attack::ResolveAttackMontageForCharacter(ASIPC
 			OutAnimationDuration = ComboAnimation->GetPlayLength();
 			const FName RequestedSlotName = ComboEntry->SlotName.IsNone() ? AttackMontageSlotName : ComboEntry->SlotName;
 			const FName ResolvedSlotName = ResolvePlayableSlotName(RequestedSlotName);
-			// 动态 BlendOut：高速时延长混出，让 DefaultSlot 从蒙太奇回到 MM 输出的过渡更长，
-			// 给 OffsetRootBone (MaxTranslationError=30) 足够的帧数来消化位置偏差，
-			// 避免冰面滑行攻击结束时角色瞬移回攻击前位置。
+			// 动态 BlendOut：高速时延长混出，配合 Inertialization 给 DeadBlending 更多衰减时间。
 			const float GroundSpeed = SourceCharacter ? SourceCharacter->GetVelocity().Size2D() : 0.0f;
-			const float DynamicBlendOut = FMath::Lerp(0.20f, 0.50f, FMath::Clamp((GroundSpeed - 100.0f) / 300.0f, 0.0f, 1.0f));
+			const float DynamicBlendOut = FMath::Lerp(0.25f, 0.65f, FMath::Clamp((GroundSpeed - 100.0f) / 300.0f, 0.0f, 1.0f));
 			RuntimeAttackMontage = UAnimMontage::CreateSlotAnimationAsDynamicMontage(ComboAnimation, ResolvedSlotName, 0.08f, DynamicBlendOut, 1.0f, 1, -1.0f, 0.0f);
 			if (RuntimeAttackMontage)
 			{
+				// ABP 拓扑修正后 DefaultSlot 直连 OffsetRootBone，
+				// DeadBlending 节点在 AO 路径上而非 Slot→RootBone 之间，
+				// Inertialization 找不到正确节点会回退但产生瞬移。
+				// 改用标准混合，DynamicBlendOut 控制过渡时长。
+				RuntimeAttackMontage->BlendModeOut = EMontageBlendMode::Standard;
 				if (HeroCharacter)
 				{
 					const int32 ResolvedNextComboIndex =
@@ -513,6 +523,10 @@ UAnimMontage* USIPGameplayAbility_Attack::ResolveAttackMontageForCharacter(ASIPC
 	OutHitWindowEndDelay = PrototypeAttackSpec->HitWindowEndDelay;
 	OutAnimationDuration = PrototypeAttackAnimation->GetPlayLength();
 	RuntimeAttackMontage = UAnimMontage::CreateSlotAnimationAsDynamicMontage(PrototypeAttackAnimation, ResolvePlayableSlotName(AttackMontageSlotName), 0.1f, 0.15f, 1.0f, 1, -1.0f, 0.0f);
+	if (RuntimeAttackMontage)
+	{
+		RuntimeAttackMontage->BlendModeOut = EMontageBlendMode::Standard;
+	}
 
 	if (!RuntimeAttackMontage)
 	{
@@ -525,31 +539,29 @@ UAnimMontage* USIPGameplayAbility_Attack::ResolveAttackMontageForCharacter(ASIPC
 }
 
 /**
- * 处理当前 Slot 名称不匹配的桥接辅助函数。
+ * 处理运行时攻击表现要走的 Slot 名称。
  *
- * 连招资源最初写的是 `FullBody_Combat`，
- * 但当前主角 AnimBP 图里实际暴露出来的是 `DefaultSlot` 和 `UpperBody`。
- * 在动画图真正整理好之前，
- * 这里先把全身攻击请求重定向到运行时确实能消费的 Slot。
+ * Translate authored combat slot names into slots that the current AnimBP can
+ * actually consume.
+ *
+ * ABP_SandboxCharacter currently guarantees `DefaultSlot` and `UpperBody`.
+ * `FullBody_Combat` is still an authored combat lane name, but until the AnimBP
+ * owns a real slot node for it we remap that request into `DefaultSlot`.
+ *
+ * Once the AnimBP exposes a real `FullBody_Combat` slot, this function can be
+ * simplified back into a near pass-through.
  */
 FName USIPGameplayAbility_Attack::ResolvePlayableSlotName(const FName RequestedSlotName) const
 {
 	static const FName FullBodyCombatSlotName(TEXT("FullBody_Combat"));
 	static const FName DefaultSlotName(TEXT("DefaultSlot"));
+
+	// FullBody_Combat 在 ABP 中存在但位于 LayeredBoneBlend 之前，
+	// 战斗蒙太奇走它会与缓存的 LocomotionBase 混合产生瞬移。
+	// 保持走 DefaultSlot（经 Inertialization DeadBlending 到
+	// OffsetRootBone 的标准路径），抽动问题通过延长宽限期修复。
 	if (RequestedSlotName == FullBodyCombatSlotName)
 	{
-		// Known legacy remap — only log once to avoid spam.
-		static bool bLoggedSlotRemap = false;
-		if (!bLoggedSlotRemap)
-		{
-			UE_LOG(
-				LogSIPAbilitySystem,
-				Log,
-				TEXT("Attack ability remapping slot [%s] -> [%s] (one-time notice; DA entries still use FullBody_Combat)."),
-				*RequestedSlotName.ToString(),
-				*DefaultSlotName.ToString());
-			bLoggedSlotRemap = true;
-		}
 		return DefaultSlotName;
 	}
 
@@ -923,6 +935,31 @@ void USIPGameplayAbility_Attack::OnAttackHitWindowEndEvent(FGameplayEventData Pa
  */
 void USIPGameplayAbility_Attack::OnAttackAnimationCompleted()
 {
+	// BlendOut 回调已处理桥接层通知和缓冲输入。此处仅做兜底 + EndAbility。
+	if (ActiveAnimationBridge.IsValid() && !bAnimationBridgeAttackFinalized)
+	{
+		ActiveAnimationBridge->FinishAttackAnimation(false);
+		bAnimationBridgeAttackFinalized = true;
+	}
+
+	if (ActiveAnimationBridge.IsValid())
+	{
+		ActiveAnimationBridge->NotifyMontageFullyEnded();
+	}
+
+	if (IsActive())
+	{
+		EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
+	}
+}
+
+void USIPGameplayAbility_Attack::OnAttackAnimationBlendingOut()
+{
+	if (!ActiveAnimationBridge.IsValid() || bAnimationBridgeAttackFinalized)
+	{
+		return;
+	}
+
 	bool bConsumeBufferedInput = false;
 	USIPAbilitySystemComponent* SIPASC = nullptr;
 
@@ -944,19 +981,15 @@ void USIPGameplayAbility_Attack::OnAttackAnimationCompleted()
 		}
 	}
 
-	if (ActiveAnimationBridge.IsValid() && !bAnimationBridgeAttackFinalized)
-	{
-		ActiveAnimationBridge->FinishAttackAnimation(bConsumeBufferedInput);
-		bAnimationBridgeAttackFinalized = true;
-	}
-
-	if (IsActive())
-	{
-		EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
-	}
+	ActiveAnimationBridge->FinishAttackAnimation(bConsumeBufferedInput);
+	bAnimationBridgeAttackFinalized = true;
 
 	if (bConsumeBufferedInput && SIPASC)
 	{
+		if (IsActive())
+		{
+			EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
+		}
 		SIPASC->AbilityInputTagPressed(SIPGameplayTags::InputTag_Attack);
 	}
 }

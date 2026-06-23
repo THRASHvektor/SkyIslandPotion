@@ -114,6 +114,9 @@ public:
 	UFUNCTION(BlueprintPure, Category = "SIP|Animation")
 	bool IsInCastPhase(FGameplayTag Tag) const;
 
+	void NotifyLanded();
+	void NotifyMontageFullyEnded();
+
 	UFUNCTION(BlueprintPure, Category = "SIP|Animation")
 	bool HasCurrentCombatActionFamilyTag(FGameplayTag Tag) const;
 
@@ -334,10 +337,12 @@ private:
 	 * 防止 OffsetRootBone 在过渡期中看到 > 30 单位的位置跳变导致角色瞬移。
 	 */
 	UPROPERTY(EditDefaultsOnly, Category = "SIP|Animation|Combat", meta = (ClampMin = "0.0"))
-	float PostAttackMMSuppressionGraceSeconds = 0.60f;
+	float PostAttackMMSuppressionGraceSeconds = 2.0f;
 
 	FTimerHandle PostAttackMMSuppressionGraceHandle;
 	bool bPostAttackMMSuppressionGraceActive = false;
+	FTimerHandle CombatLandingRecoveryHandle;
+	bool bCombatLandingRecoveryActive = false;
 
 	float GroundSpeed = 0.0f;
 	
@@ -346,4 +351,7 @@ private:
 	bool bIsFalling = false;
 	
 	bool bIsJumping = false;
+
+	/** 连续处于 Falling 状态的累计时长，用于过滤冰面微型落差抖动。 */
+	float FallingDuration = 0.0f;
 };
