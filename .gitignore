@@ -68,12 +68,19 @@ Scripts/
 diagrams/
 
 # ============================
-# Specific large content (optional)
+# External / large content (managed separately)
 # ============================
 Client/SIP/Content/Characters/MonsterForSurvivalGame/
+Client/SIP/Content/Characters/UEFN_Mannequin/
 Client/SIP/Content/CozyNature/
 Client/SIP/Content/Mage/
 Client/SIP/Content/MetaHumans/
 Client/SIP/Content/SlashFX_SoftTofu/
 Client/SIP/Content/StylizedEnvironment/
+Client/SIP/Content/VFX/
+Client/SIP/Content/Audio/
+Client/SIP/Content/LevelPrototyping/
+Client/SIP/Content/JayantChakradhariAssets_Free_Stylized_Lava_Rock/
+Client/SIP/Content/__ExternalActors__/
+Client/SIP/Content/__ExternalObjects__/
 Client/SIP/soft-ue-cli/
