@@ -12,8 +12,8 @@
  * 反应矩阵（POC Demo 5种）：
  *   Element.Plant  + Element.Fire    → Reaction.Burn      (植被清除，道路开放)
  *   Element.Ice    + Element.Fire    → Reaction.Melt      (冰结构融化，隐藏区域显现)
- *   Element.Heal   + Element.Ice     → Reaction.Freeze    (水面冰封，形成可行走平台)
- *   Element.Heal   + Element.Thunder → Reaction.Electrify (湿润区域感电，范围眩晕)
+ *   Element.Water  + Element.Ice     → Reaction.Freeze    (水面冰封，形成可行走平台)
+ *   Element.Water  + Element.Thunder → Reaction.Electrify (湿润区域感电，范围眩晕)
  *   Element.Plant  + Element.Wind    → Reaction.Bloom     (孢子扩散，资源点新生)
  */
 

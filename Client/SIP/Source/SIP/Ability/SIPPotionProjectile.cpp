@@ -2,6 +2,8 @@
 
 #include "Ability/SIPPotionProjectile.h"
 #include "World/SIPElementalZoneActor.h"
+#include "World/SIPElementImpactReceiver.h"
+#include "World/SIPElementImpactTypes.h"
 #include "Character/SIPCharacter.h"
 #include "Components/SphereComponent.h"
 #include "Components/StaticMeshComponent.h"
@@ -104,12 +106,25 @@ void ASIPPotionProjectile::HandleImpact(const FVector& ImpactLocation)
 		}
 
 		// 元素区域反应
-		if (ASIPElementalZoneActor* Zone = Cast<ASIPElementalZoneActor>(HitActor))
+		if (!ElementTag.IsValid())
 		{
-			if (ElementTag.IsValid())
-			{
-				Zone->ReceiveElementHit(ElementTag, ImpactLocation);
-			}
+			continue;
+		}
+
+		if (HitActor->GetClass()->ImplementsInterface(USIPElementImpactReceiver::StaticClass()))
+		{
+			FSIPElementImpactContext ImpactContext;
+			ImpactContext.IncomingElement = ElementTag;
+			ImpactContext.SurfaceDamage = SurfaceDamage;
+			ImpactContext.ImpactLocation = ImpactLocation;
+			ImpactContext.SourceActor = this;
+			ImpactContext.InstigatorActor = GetInstigator();
+
+			ISIPElementImpactReceiver::Execute_ReceiveElementImpact(HitActor, ImpactContext);
+		}
+		else if (ASIPElementalZoneActor* Zone = Cast<ASIPElementalZoneActor>(HitActor))
+		{
+			Zone->ReceiveElementHit(ElementTag, ImpactLocation);
 		}
 	}
 

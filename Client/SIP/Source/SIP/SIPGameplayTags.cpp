@@ -95,7 +95,8 @@ namespace SIPGameplayTags
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Element_Thunder, "Element.Thunder", "Thunder element - carried by thunder potions.");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Element_Wind,    "Element.Wind",    "Wind element - carried by wind potions.");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Element_Plant,   "Element.Plant",   "Plant element - forest zones and nature potions.");
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Element_Heal,    "Element.Heal",    "Heal/Water element - healing potions, acts as water in reactions.");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Element_Water,   "Element.Water",   "Water element - water surfaces and water reactions.");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Element_Heal,    "Element.Heal",    "Heal element - healing potions.");
 
 	// ==================== 群落标签 ====================
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Biome_Fire,   "Biome.Fire",   "Volcanic island biome - used by PCG island generator.");
@@ -106,8 +107,8 @@ namespace SIPGameplayTags
 	// ==================== 反应标签 ====================
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Reaction_Burn,      "Reaction.Burn",      "Plant+Fire:  vegetation removed, path revealed.");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Reaction_Melt,      "Reaction.Melt",      "Ice+Fire:    ice structures melt, hidden area exposed.");
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Reaction_Freeze,    "Reaction.Freeze",    "Heal+Ice:    water surface freezes into walkable platform.");
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Reaction_Electrify, "Reaction.Electrify", "Heal+Thunder: wet area electrified, enemies stunned.");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Reaction_Freeze,    "Reaction.Freeze",    "Water+Ice: water surface freezes into walkable platform.");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Reaction_Electrify, "Reaction.Electrify", "Water+Thunder: wet area electrified, enemies damaged or controlled.");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Reaction_Bloom,     "Reaction.Bloom",     "Plant+Wind:  spores spread, new resource nodes appear.");
 
 	// ==================== 区域状态标签 ====================

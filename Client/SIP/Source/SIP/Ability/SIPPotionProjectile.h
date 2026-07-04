@@ -61,6 +61,9 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "SIP|Projectile")
 	float ImpactDamage = 20.f;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "SIP|Projectile", meta = (ClampMin = "0.0"))
+	float SurfaceDamage = 1.0f;
+
 	/** 落点爆炸特效（每种元素可设置不同 VFX）*/
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "SIP|Projectile")
 	TObjectPtr<UNiagaraSystem> ImpactVFX;
