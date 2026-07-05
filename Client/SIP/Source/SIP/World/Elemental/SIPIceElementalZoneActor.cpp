@@ -40,10 +40,5 @@ void ASIPIceElementalZoneActor::OnMeltReaction(const FSIPElementImpactContext& I
 	}
 
 	PlayReactionVFX(MeltVFX.Get(), ReactionLocation);
-
-	if (bDamageCharactersOnMelt)
-	{
-		const int32 DamagedCount = ApplyDamageToOverlappingCharacters(MeltCharacterDamage, ImpactContext.InstigatorActor.Get());
-		UE_LOG(LogSIP, Log, TEXT("%s Melt damaged %d character(s)."), *GetName(), DamagedCount);
-	}
+	UE_LOG(LogSIP, Log, TEXT("%s Melt disabled ice support collision."), *GetName());
 }

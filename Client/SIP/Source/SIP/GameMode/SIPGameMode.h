@@ -22,7 +22,29 @@ public:
 	ASIPGameMode();
 
 	//virtual void InitGame(const FString& MapName, const FString& Options, FString& ErrorMessage) override;
+
+	/**
+	 * Z 说明：项目级默认 KillZ（cm）。
+	 * 关卡加载时会写入到该 World 的 WorldSettings->KillZ，
+	 * 使得任何位置低于此 Z 的 Actor 触发 FellOutOfWorld。
+	 * ASIPCharacter 已把 FellOutOfWorld 接入 GAS GE 死亡流程。
+	 * 若关卡自身的 WorldSettings 已改过 KillZ 且不希望被覆盖，请把
+	 * bOverrideWorldSettingsKillZ 关闭，或在具体关卡里再手动覆盖。
+	 */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "SIP|World")
+	float DefaultKillZ = -1000.0f;
+
+	/**
+	 * Z 说明：是否用 DefaultKillZ 覆盖当前关卡 WorldSettings->KillZ。
+	 * 默认为 true，保证所有使用本 GameMode 的关卡都有一致的坠落死亡阈值。
+	 */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "SIP|World")
+	bool bOverrideWorldSettingsKillZ = true;
+
+protected:
+	virtual void InitGame(const FString& MapName, const FString& Options, FString& ErrorMessage) override;
 };
+
 
 
 

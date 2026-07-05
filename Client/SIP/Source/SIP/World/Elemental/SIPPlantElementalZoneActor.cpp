@@ -68,6 +68,9 @@ void ASIPPlantElementalZoneActor::StartBurning(const FSIPElementImpactContext& I
 	const int32 BurningMaterialSlots = ApplyMaterialToVisualActor(BurningMaterial.Get());
 	UE_LOG(LogSIP, Log, TEXT("%s switched %d material slot(s) to burning material."), *GetName(), BurningMaterialSlots);
 
+	// Stop any previous loop VFX before spawning a new one so re-triggers refresh the effect.
+	StopBurningVFX();
+
 	if (BurningLoopVFX)
 	{
 		const FTransform VFXTransform = ResolveVisualEffectTransform(BurningLoopVFXLocalOffset);

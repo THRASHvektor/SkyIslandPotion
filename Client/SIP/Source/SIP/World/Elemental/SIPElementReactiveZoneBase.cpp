@@ -1,6 +1,7 @@
 #include "World/Elemental/SIPElementReactiveZoneBase.h"
 
 #include "Character/SIPCharacter.h"
+#include "Combat/SIPCombatStatics.h"
 #include "Components/BoxComponent.h"
 #include "Components/ChildActorComponent.h"
 #include "Components/MeshComponent.h"
@@ -36,14 +37,6 @@ void ASIPElementReactiveZoneBase::BeginPlay()
 	ReactionHealth = MaxReactionHealth;
 	bHasTriggeredReaction = false;
 	TriggeredReactionTag = FGameplayTag::EmptyTag;
-
-	if (bDisableVisualActorCollision)
-	{
-		if (AActor* VisualActor = GetVisualActor())
-		{
-			VisualActor->SetActorEnableCollision(false);
-		}
-	}
 }
 
 void ASIPElementReactiveZoneBase::ReceiveElementHit(const FGameplayTag& IncomingElement, const FVector& ImpactLocation)
@@ -139,6 +132,36 @@ AActor* ASIPElementReactiveZoneBase::GetVisualActor() const
 	return VisualActorComponent ? VisualActorComponent->GetChildActor() : nullptr;
 }
 
+void ASIPElementReactiveZoneBase::ApplyGeneratedZoneExtent(const FVector& NewZoneExtent)
+{
+	if (!ZoneBounds)
+	{
+		return;
+	}
+
+	const FVector SafeNewExtent(
+		FMath::Max(NewZoneExtent.X, KINDA_SMALL_NUMBER),
+		FMath::Max(NewZoneExtent.Y, KINDA_SMALL_NUMBER),
+		FMath::Max(NewZoneExtent.Z, KINDA_SMALL_NUMBER));
+	const FVector CurrentExtent = ZoneBounds->GetUnscaledBoxExtent();
+	const FVector SafeCurrentExtent(
+		FMath::Max(CurrentExtent.X, KINDA_SMALL_NUMBER),
+		FMath::Max(CurrentExtent.Y, KINDA_SMALL_NUMBER),
+		FMath::Max(CurrentExtent.Z, KINDA_SMALL_NUMBER));
+
+	const FVector VisualScaleRatio(
+		SafeNewExtent.X / SafeCurrentExtent.X,
+		SafeNewExtent.Y / SafeCurrentExtent.Y,
+		SafeNewExtent.Z / SafeCurrentExtent.Z);
+
+	ZoneBounds->SetBoxExtent(SafeNewExtent);
+
+	if (VisualActorComponent)
+	{
+		VisualActorComponent->SetRelativeScale3D(VisualActorComponent->GetRelativeScale3D() * VisualScaleRatio);
+	}
+}
+
 void ASIPElementReactiveZoneBase::OnSurfaceDamageAccepted(const FGameplayTag& ReactionTag, const FSIPElementImpactContext& ImpactContext)
 {
 	K2_OnSurfaceDamageAccepted(ReactionTag, ImpactContext);
@@ -180,7 +203,8 @@ int32 ASIPElementReactiveZoneBase::ApplyDamageToOverlappingCharacters(float Dama
 			continue;
 		}
 
-		if (Character->ApplyCombatDamage(DamageAmount, DamageInstigator))
+		// Route all zone damage through the GAS GameplayEffect pipeline (uses project default damage GE).
+		if (USIPCombatStatics::ApplyDamageToTarget(Character, DamageAmount, DamageInstigator, this, nullptr))
 		{
 			++DamagedCharacterCount;
 		}
@@ -212,7 +236,7 @@ void ASIPElementReactiveZoneBase::SetVisualActorHidden(bool bHide, bool bDisable
 
 	if (bDisableCollision)
 	{
-		VisualActor->SetActorEnableCollision(!bHide && !bDisableVisualActorCollision);
+		VisualActor->SetActorEnableCollision(!bHide);
 	}
 }
 

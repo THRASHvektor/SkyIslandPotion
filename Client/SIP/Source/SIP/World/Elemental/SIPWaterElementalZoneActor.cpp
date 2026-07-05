@@ -68,7 +68,10 @@ void ASIPWaterElementalZoneActor::StartElectrify(const FSIPElementImpactContext&
 	bIsElectrified = true;
 	ElectrifyDamageInstigator = ImpactContext.InstigatorActor;
 
-	if (ElectrifyLoopVFX && !ActiveElectrifyLoopVFX)
+	// Stop any previous loop VFX before spawning a new one so re-triggers refresh the effect.
+	StopLoopingVFX(ActiveElectrifyLoopVFX);
+
+	if (ElectrifyLoopVFX)
 	{
 		const FTransform VFXTransform = ResolveVisualEffectTransform(ElectrifyLoopVFXLocalOffset);
 		ActiveElectrifyLoopVFX = UNiagaraFunctionLibrary::SpawnSystemAtLocation(
@@ -143,7 +146,10 @@ void ASIPWaterElementalZoneActor::StartFreeze(const FSIPElementImpactContext& Im
 {
 	bIsFrozen = true;
 
-	if (FreezeLoopVFX && !ActiveFreezeLoopVFX)
+	// Stop any previous loop VFX before spawning a new one so re-triggers refresh the effect.
+	StopLoopingVFX(ActiveFreezeLoopVFX);
+
+	if (FreezeLoopVFX)
 	{
 		const FTransform VFXTransform = ResolveVisualEffectTransform(FreezeLoopVFXLocalOffset);
 		ActiveFreezeLoopVFX = UNiagaraFunctionLibrary::SpawnSystemAtLocation(

@@ -26,11 +26,5 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SIP|Ice")
 	bool bDisableZoneCollisionOnMelt = true;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SIP|Ice")
-	bool bDamageCharactersOnMelt = true;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SIP|Ice", meta = (ClampMin = "0.0"))
-	float MeltCharacterDamage = 999.0f;
-
 	void OnMeltReaction(const FSIPElementImpactContext& ImpactContext, const FVector& ReactionLocation);
 };

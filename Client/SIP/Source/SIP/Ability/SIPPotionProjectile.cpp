@@ -4,13 +4,16 @@
 #include "World/SIPElementalZoneActor.h"
 #include "World/SIPElementImpactReceiver.h"
 #include "World/SIPElementImpactTypes.h"
+#include "World/Elemental/SIPElementReactiveZoneBase.h"
 #include "Character/SIPCharacter.h"
+#include "Combat/SIPCombatStatics.h"
 #include "Components/SphereComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "GameFramework/ProjectileMovementComponent.h"
 #include "NiagaraFunctionLibrary.h"
 #include "NiagaraComponent.h"
 #include "Kismet/KismetSystemLibrary.h"
+#include "EngineUtils.h"
 #include "SIPLogCategory.h"
 
 ASIPPotionProjectile::ASIPPotionProjectile()
@@ -67,11 +70,12 @@ void ASIPPotionProjectile::OnProjectileHit(
 
 void ASIPPotionProjectile::HandleImpact(const FVector& ImpactLocation)
 {
-	// ── 1. 球形检测所有命中对象 ──────────────────────────────────────
+	// ── 1. 球形检测：仅用于对角色造成 AOE 伤害 ─────────────────────
+	//     元素反应【不再】依赖此结果，避免 VisualActor / 其它无关碰撞
+	//     被误认为反应目标。
 	TArray<FHitResult> HitResults;
 	TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes = {
-		UEngineTypes::ConvertToObjectType(ECC_Pawn),
-		UEngineTypes::ConvertToObjectType(ECC_WorldDynamic)
+		UEngineTypes::ConvertToObjectType(ECC_Pawn)
 	};
 
 	UKismetSystemLibrary::SphereTraceMultiForObjects(
@@ -87,44 +91,86 @@ void ASIPPotionProjectile::HandleImpact(const FVector& ImpactLocation)
 		true
 	);
 
-	// ── 2. 对角色造成伤害，对 ZoneActor 触发元素反应 ────────────────
-	TSet<AActor*> ProcessedActors; // 防止同一 Actor 处理两次
-
+	TSet<AActor*> DamagedActors; // 防止同一 Actor 被打两次
 	for (const FHitResult& Result : HitResults)
 	{
 		AActor* HitActor = Result.GetActor();
-		if (!HitActor || ProcessedActors.Contains(HitActor))
+		if (!HitActor || DamagedActors.Contains(HitActor))
 		{
 			continue;
 		}
-		ProcessedActors.Add(HitActor);
+		DamagedActors.Add(HitActor);
 
-		// 角色伤害
 		if (ASIPCharacter* TargetChar = Cast<ASIPCharacter>(HitActor))
 		{
-			TargetChar->ApplyCombatDamage(ImpactDamage, GetInstigator());
+			// 重构：区域伤害统一走 GAS GameplayEffect 流程（项目默认伤害 GE）。
+			USIPCombatStatics::ApplyDamageToTarget(TargetChar, ImpactDamage, GetInstigator(), this, nullptr);
 		}
+	}
 
-		// 元素区域反应
-		if (!ElementTag.IsValid())
+	// ── 2. 元素反应：严格由 ZoneActor 的 ZoneBounds 决定 ─────────────
+	//     不依赖 SphereTrace / VisualActor 的碰撞——遍历世界中所有
+	//     Zone，用其组件包围盒与 AOE 球做几何相交测试。
+	if (ElementTag.IsValid())
+	{
+		UWorld* World = GetWorld();
+		if (World)
 		{
-			continue;
-		}
+			const float SphereRadiusSq = ImpactRadius * ImpactRadius;
+			TSet<AActor*> ProcessedZones;
 
-		if (HitActor->GetClass()->ImplementsInterface(USIPElementImpactReceiver::StaticClass()))
-		{
-			FSIPElementImpactContext ImpactContext;
-			ImpactContext.IncomingElement = ElementTag;
-			ImpactContext.SurfaceDamage = SurfaceDamage;
-			ImpactContext.ImpactLocation = ImpactLocation;
-			ImpactContext.SourceActor = this;
-			ImpactContext.InstigatorActor = GetInstigator();
+			auto TryTriggerZone = [&](AActor* ZoneActor)
+			{
+				if (!ZoneActor || ProcessedZones.Contains(ZoneActor))
+				{
+					return;
+				}
 
-			ISIPElementImpactReceiver::Execute_ReceiveElementImpact(HitActor, ImpactContext);
-		}
-		else if (ASIPElementalZoneActor* Zone = Cast<ASIPElementalZoneActor>(HitActor))
-		{
-			Zone->ReceiveElementHit(ElementTag, ImpactLocation);
+				// 只使用 Zone 自身注册的碰撞组件包围盒（ZoneBounds），
+				// 忽略 VisualActor / 附加子 Actor 的碰撞体积。
+				const FBox ZoneBox = ZoneActor->GetComponentsBoundingBox(false, false);
+				if (!ZoneBox.IsValid)
+				{
+					return;
+				}
+
+				const FVector ClosestPoint = ZoneBox.GetClosestPointTo(ImpactLocation);
+				if (FVector::DistSquared(ClosestPoint, ImpactLocation) > SphereRadiusSq)
+				{
+					return;
+				}
+
+				ProcessedZones.Add(ZoneActor);
+
+				// 优先走接口（新 Zone 系统 ASIPElementReactiveZoneBase）
+				if (ZoneActor->GetClass()->ImplementsInterface(USIPElementImpactReceiver::StaticClass()))
+				{
+					FSIPElementImpactContext ImpactContext;
+					ImpactContext.IncomingElement = ElementTag;
+					ImpactContext.SurfaceDamage = SurfaceDamage;
+					ImpactContext.ImpactLocation = ImpactLocation;
+					ImpactContext.SourceActor = this;
+					ImpactContext.InstigatorActor = GetInstigator();
+
+					ISIPElementImpactReceiver::Execute_ReceiveElementImpact(ZoneActor, ImpactContext);
+				}
+				else if (ASIPElementalZoneActor* LegacyZone = Cast<ASIPElementalZoneActor>(ZoneActor))
+				{
+					LegacyZone->ReceiveElementHit(ElementTag, ImpactLocation);
+				}
+			};
+
+			// 新 Zone 系统：全部继承自 ASIPElementReactiveZoneBase
+			for (TActorIterator<ASIPElementReactiveZoneBase> It(World); It; ++It)
+			{
+				TryTriggerZone(*It);
+			}
+
+			// 老 Zone 系统兼容
+			for (TActorIterator<ASIPElementalZoneActor> It(World); It; ++It)
+			{
+				TryTriggerZone(*It);
+			}
 		}
 	}
 
@@ -142,8 +188,8 @@ void ASIPPotionProjectile::HandleImpact(const FVector& ImpactLocation)
 		);
 	}
 
-	UE_LOG(LogSIPAbilitySystem, Log, TEXT("PotionProjectile[%s] impacted at %s. Hit %d actors."),
-		*ElementTag.ToString(), *ImpactLocation.ToString(), ProcessedActors.Num());
+	UE_LOG(LogSIPAbilitySystem, Log, TEXT("PotionProjectile[%s] impacted at %s. Damaged %d actors."),
+		*ElementTag.ToString(), *ImpactLocation.ToString(), DamagedActors.Num());
 
 	Destroy();
 }

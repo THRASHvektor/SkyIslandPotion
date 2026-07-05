@@ -9,6 +9,7 @@
 #include "Character/SIPCharacter.h"
 #include "Character/SIPHeroCharacter.h"
 #include "Character/Components/SIPHeroAnimationBridgeComponent.h"
+#include "Combat/SIPCombatStatics.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Engine/OverlapResult.h"
 #include "Engine/World.h"
@@ -248,7 +249,8 @@ void USIPGameplayAbility_Attack::ApplyAttackHit(ASIPCharacter* SourceCharacter)
 	const TArray<ASIPCharacter*> Targets = CollectCharacterTargets(SourceCharacter);
 	for (ASIPCharacter* Target : Targets)
 	{
-		Target->ApplyCombatDamage(DamageAmount, SourceCharacter);
+		// 重构：近战伤害统一走 GAS GameplayEffect 流程（项目默认伤害 GE）。
+		USIPCombatStatics::ApplyDamageToTarget(Target, DamageAmount, SourceCharacter, this, nullptr);
 	}
 
 	ApplySurfaceImpact(SourceCharacter);

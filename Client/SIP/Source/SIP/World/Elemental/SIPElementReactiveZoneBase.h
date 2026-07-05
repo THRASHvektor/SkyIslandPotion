@@ -30,9 +30,6 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "SIP|Zone|Visual")
 	TObjectPtr<UChildActorComponent> VisualActorComponent;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SIP|Zone|Visual")
-	bool bDisableVisualActorCollision = true;
-
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "SIP|Zone")
 	FGameplayTag ZoneElementTag;
 
@@ -53,6 +50,9 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "SIP|Zone|Visual")
 	AActor* GetVisualActor() const;
+
+	UFUNCTION(BlueprintCallable, Category = "SIP|Zone")
+	void ApplyGeneratedZoneExtent(const FVector& NewZoneExtent);
 
 protected:
 	virtual void BeginPlay() override;

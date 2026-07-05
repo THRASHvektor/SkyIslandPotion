@@ -123,6 +123,12 @@ namespace SIPGameplayTags
 	// 使用场景：加到对应的cooldown GE里，GA会自动检查这个标签来判断技能是否在冷却中
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Cooldown_Dash, "Cooldown.Dash", "Dash cooldown.");
 
+	// ==================== SetByCaller 数据标签 ====================
+	// Z 说明：GE SetByCaller 使用的数据标签
+	// 用途：GE Modifier Magnitude 类型选 SetByCaller 时，DataTag 填这些标签，运行时通过 Spec.Data->SetSetByCallerMagnitude 传值
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(SIPData_Damage, "SIPData.Damage", "SetByCaller magnitude tag for damage GE.");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(SIPData_Heal,   "SIPData.Heal",   "SetByCaller magnitude tag for heal GE.");
+
 	// ==================== 标签查找函数 ====================
 	// Z 说明：运行时根据字符串查找标签
 	// 一般不使用，仅作备用（通过字符串动态获取标签）

@@ -150,4 +150,11 @@ namespace SIPGameplayTags
 	// 用途：标识技能的冷却状态
 	// 使用场景：加到对应的cooldown GE里，GA会自动检查这个标签来判断技能是否在冷却中
 	SIP_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Cooldown_Dash);
+
+	// ==================== SetByCaller 数据标签 ====================
+	// Z 说明：GE SetByCaller 使用的数据标签
+	// 用途：伤害/治疗 GE 通过这些 Tag 从 Spec 里读取运行时传入的数值
+	// 使用方式：Spec.Data->SetSetByCallerMagnitude(SIPData_Damage, Amount);
+	SIP_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(SIPData_Damage);   // GE 伤害值
+	SIP_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(SIPData_Heal);     // GE 治疗值
 };

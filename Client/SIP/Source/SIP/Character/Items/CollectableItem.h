@@ -39,7 +39,7 @@ public:
 
 protected:
     // 设计师配置的交互提示文本。
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Collectable", meta = (displayName = "鐗╁搧浜や簰鏂囨湰"))
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Collectable", meta = (displayName = "交互显示文本"))
     FText InteractText;
 
     // 聚焦时显示在屏幕上的提示控件组件。
@@ -47,6 +47,6 @@ protected:
     TObjectPtr<UWidgetComponent> WidgetComponent;
 
     // 首次聚焦时实例化的提示 Widget 类。
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Collectable", meta = (hint = "褰撹鐗╀綋涓虹帺瀹跺緟浜や簰鐗╀綋鏃舵樉绀虹殑鎻愮ずUI"))
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Collectable", meta = (hint = "首次聚焦时实例化的提示 Widget 类"))
     TSubclassOf<UCollectableHintWidget> FocusedHintClass;
 };
