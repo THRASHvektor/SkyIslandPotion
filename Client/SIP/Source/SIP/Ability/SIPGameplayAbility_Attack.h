@@ -2,8 +2,12 @@
 
 #include "CoreMinimal.h"
 #include "SIPGameplayAbility.h"
+#include "Combat/SIPAttackShapeTypes.h"
+#include "Engine/EngineTypes.h"
+#include "GameplayTagContainer.h"
 #include "SIPGameplayAbility_Attack.generated.h"
 
+class AActor;
 class ASIPCharacter;
 class UAnimMontage;
 class UAnimSequenceBase;
@@ -40,8 +44,18 @@ protected:
 	// Z 说明：结束能力时统一清理桥接引用和异步任务。
 	virtual void EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled) override;
 
-	// Z 说明：收集攻击范围内的有效目标。
-	TArray<ASIPCharacter*> CollectTargets(ASIPCharacter* SourceCharacter) const;
+	// Z 说明：按可配置攻击形状收集重叠 Actor。
+	TArray<AActor*> CollectActorsByShape(
+		ASIPCharacter* SourceCharacter,
+		const USIPAttackShapeSpec* ShapeSpec,
+		const TArray<TEnumAsByte<EObjectTypeQuery>>& ObjectTypes,
+		TSubclassOf<AActor> ActorClassFilter) const;
+
+	TArray<ASIPCharacter*> CollectCharacterTargets(ASIPCharacter* SourceCharacter) const;
+
+	void ApplyAttackHit(ASIPCharacter* SourceCharacter);
+
+	void ApplySurfaceImpact(ASIPCharacter* SourceCharacter) const;
 
 	// Z 说明：启动动画驱动攻击流程，等待命中窗口事件或延时回退。
 	bool StartAnimationDrivenAttack(ASIPCharacter* SourceCharacter);
@@ -84,6 +98,24 @@ protected:
 	// Z 说明：攻击碰撞球半径。
 	UPROPERTY(EditDefaultsOnly, Category = "Attack")
 	float AttackRadius = 100.0f;
+
+	UPROPERTY(EditDefaultsOnly, Instanced, BlueprintReadOnly, Category = "Attack|Hit")
+	TObjectPtr<USIPAttackShapeSpec> CharacterHitShape;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Attack|Elemental")
+	bool bApplySurfaceImpact = true;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Attack|Elemental")
+	bool bUseCharacterHitShapeForSurfaceImpact = true;
+
+	UPROPERTY(EditDefaultsOnly, Instanced, BlueprintReadOnly, Category = "Attack|Elemental", meta = (EditCondition = "!bUseCharacterHitShapeForSurfaceImpact", EditConditionHides))
+	TObjectPtr<USIPAttackShapeSpec> SurfaceImpactShape;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Attack|Elemental")
+	FGameplayTag AttackElementTag;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Attack|Elemental", meta = (ClampMin = "0.0"))
+	float SurfaceImpactDamage = 1.0f;
 
 	// Z 说明：攻击表现使用的蒙太奇，可为空。
 	UPROPERTY(EditDefaultsOnly, Category = "Attack|Animation")

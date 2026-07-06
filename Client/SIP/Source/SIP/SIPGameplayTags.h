@@ -118,7 +118,8 @@ namespace SIPGameplayTags
 	SIP_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Element_Thunder);  // 雷元素（雷晶矿系药水）
 	SIP_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Element_Wind);     // 风元素（风羽草系药水）
 	SIP_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Element_Plant);    // 植物元素（森林区域/植物类药水）
-	SIP_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Element_Heal);     // 水/治愈元素（月光花系药水，兼水属性）
+	SIP_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Element_Water);    // 水元素（水面区域/水属性反应）
+	SIP_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Element_Heal);     // 治愈元素（月光花系药水）
 
 	// ==================== 群落标签 ====================
 	// 生物群落标签：用于 PCG 岛屿生成时区分岛屿类型
@@ -133,8 +134,8 @@ namespace SIPGameplayTags
 	// ZoneActor 根据此标签决定 PCG 清理/网格替换/VFX 播放方案
 	SIP_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Reaction_Burn);      // 燃烧：Plant+Fire  → 植被移除，道路开启
 	SIP_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Reaction_Melt);      // 熔化：Ice+Fire    → 冰结构坍塌，隐藏区域显现
-	SIP_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Reaction_Freeze);    // 冻结：Heal+Ice    → 水面冰封，形成可行走平台
-	SIP_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Reaction_Electrify); // 感电：Heal+Thunder→ 水域区域敌人全体眩晕
+	SIP_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Reaction_Freeze);    // 冻结：Water+Ice → 水面冰封，形成可行走平台
+	SIP_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Reaction_Electrify); // 感电：Water+Thunder → 水域区域敌人受伤/控制
 	SIP_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Reaction_Bloom);     // 绽放：Plant+Wind  → 孢子扩散，资源点新生
 
 	// ==================== 区域状态标签 ====================
@@ -149,4 +150,11 @@ namespace SIPGameplayTags
 	// 用途：标识技能的冷却状态
 	// 使用场景：加到对应的cooldown GE里，GA会自动检查这个标签来判断技能是否在冷却中
 	SIP_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Cooldown_Dash);
+
+	// ==================== SetByCaller 数据标签 ====================
+	// Z 说明：GE SetByCaller 使用的数据标签
+	// 用途：伤害/治疗 GE 通过这些 Tag 从 Spec 里读取运行时传入的数值
+	// 使用方式：Spec.Data->SetSetByCallerMagnitude(SIPData_Damage, Amount);
+	SIP_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(SIPData_Damage);   // GE 伤害值
+	SIP_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(SIPData_Heal);     // GE 治疗值
 };

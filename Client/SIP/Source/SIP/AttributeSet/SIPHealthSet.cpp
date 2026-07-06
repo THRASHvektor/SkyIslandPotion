@@ -16,6 +16,7 @@ USIPHealthSet::USIPHealthSet()
 	: Health(100.0f)
 	, MaxHealth(100.0f)
 	, Healing(0.0f)
+	, Damage(0.0f)
 {
 	// 初始化并缓存常用的 GameplayTag（用于在 GameplayEffects / Ability 中标识属性变化）
 	Tag_MaxHealthChanged = FGameplayTag::RequestGameplayTag(FName("Health.MaxChanged"));
@@ -94,7 +95,8 @@ void USIPHealthSet::PostAttributeChange(const FGameplayAttribute& Attribute, flo
 		}
 	}
 
-	// Health 转换状态检测（从 <=0 到 >0 则视为复活；从 >0 到 <=0 则视为死亡）
+	// Health 转换状态检测（从 <=0 到 >0 则视为复活）
+	// 死亡判定已移到 PostGameplayEffectExecute 中处理，确保拿得到正确的 Instigator
 	if (Attribute == GetHealthAttribute())
 	{
 		if (OldValue <= 0.0f && NewValue > 0.0f)
@@ -114,6 +116,45 @@ void USIPHealthSet::PostAttributeChange(const FGameplayAttribute& Attribute, flo
 			{
 				SIPCharacter->HandleOutOfHealth();
 			}
+		}
+	}
+}
+
+// GE 实际执行后回调：将临时的 Damage / Healing 属性转移到 Health
+// 这里能拿到 Data.EffectSpec.GetContext() 里的 Instigator、SourceObject 等完整 GAS 环境
+void USIPHealthSet::PostGameplayEffectExecute(const FGameplayEffectModCallbackData& Data)
+{
+	Super::PostGameplayEffectExecute(Data);
+
+	const FGameplayEffectContextHandle& Context = Data.EffectSpec.GetContext();
+	AActor* Instigator = Context.GetOriginalInstigator();
+
+	if (Data.EvaluatedData.Attribute == GetDamageAttribute())
+	{
+		const float LocalDamage = GetDamage();
+		SetDamage(0.0f); // 消费临时属性，避免累加
+
+		if (LocalDamage > 0.0f)
+		{
+			const float NewHealth = FMath::Clamp(GetHealth() - LocalDamage, 0.0f, GetMaxHealth());
+			SetHealth(NewHealth);
+
+			UE_LOG(LogSIP, Log, TEXT("%s took %.2f damage from %s via GE. Health -> %.2f/%.2f"),
+				*GetNameSafe(GetOuter()), LocalDamage, *GetNameSafe(Instigator), NewHealth, GetMaxHealth());
+		}
+	}
+	else if (Data.EvaluatedData.Attribute == GetHealingAttribute())
+	{
+		const float LocalHealing = GetHealing();
+		SetHealing(0.0f);
+
+		if (LocalHealing > 0.0f)
+		{
+			const float NewHealth = FMath::Clamp(GetHealth() + LocalHealing, 0.0f, GetMaxHealth());
+			SetHealth(NewHealth);
+
+			UE_LOG(LogSIP, Log, TEXT("%s healed %.2f from %s via GE. Health -> %.2f/%.2f"),
+				*GetNameSafe(GetOuter()), LocalHealing, *GetNameSafe(Instigator), NewHealth, GetMaxHealth());
 		}
 	}
 }

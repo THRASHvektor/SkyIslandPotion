@@ -9,10 +9,14 @@
 #include "Character/SIPCharacter.h"
 #include "Character/SIPHeroCharacter.h"
 #include "Character/Components/SIPHeroAnimationBridgeComponent.h"
+#include "Combat/SIPCombatStatics.h"
 #include "Components/SkeletalMeshComponent.h"
-#include "Kismet/KismetSystemLibrary.h"
+#include "Engine/OverlapResult.h"
+#include "Engine/World.h"
+#include "GameFramework/Actor.h"
 #include "SIPGameplayTags.h"
 #include "SIPLogCategory.h"
+#include "World/SIPElementImpactReceiver.h"
 
 namespace
 {
@@ -65,6 +69,16 @@ USIPGameplayAbility_Attack::USIPGameplayAbility_Attack(const FObjectInitializer&
 	InstancingPolicy = EGameplayAbilityInstancingPolicy::InstancedPerExecution;
 	AbilityTags.AddTag(SIPGameplayTags::InputTag_Attack);
 	ActivationBlockedTags.AddTag(SIPGameplayTags::State_Dead);
+
+	USIPAttackSphereShapeSpec* DefaultCharacterHitShape = CreateDefaultSubobject<USIPAttackSphereShapeSpec>(TEXT("CharacterHitShape"));
+	DefaultCharacterHitShape->LocalOffset = FVector(AttackRange, 0.0f, 0.0f);
+	DefaultCharacterHitShape->Radius = AttackRadius;
+	CharacterHitShape = DefaultCharacterHitShape;
+
+	USIPAttackSphereShapeSpec* DefaultSurfaceImpactShape = CreateDefaultSubobject<USIPAttackSphereShapeSpec>(TEXT("SurfaceImpactShape"));
+	DefaultSurfaceImpactShape->LocalOffset = FVector(AttackRange, 0.0f, 0.0f);
+	DefaultSurfaceImpactShape->Radius = AttackRadius;
+	SurfaceImpactShape = DefaultSurfaceImpactShape;
 }
 
 /**
@@ -133,25 +147,84 @@ void USIPGameplayAbility_Attack::EndAbility(const FGameplayAbilitySpecHandle Han
 	Super::EndAbility(Handle, ActorInfo, ActivationInfo, bReplicateEndAbility, bWasCancelled);
 }
 
-/**
- * Z 说明：CollectTargets
- * 使用球形检测收集主角前方的可受击目标
- */
-TArray<ASIPCharacter*> USIPGameplayAbility_Attack::CollectTargets(ASIPCharacter* SourceCharacter) const
+TArray<AActor*> USIPGameplayAbility_Attack::CollectActorsByShape(
+	ASIPCharacter* SourceCharacter,
+	const USIPAttackShapeSpec* ShapeSpec,
+	const TArray<TEnumAsByte<EObjectTypeQuery>>& ObjectTypes,
+	TSubclassOf<AActor> ActorClassFilter) const
 {
-	TArray<AActor*> OverlappingActors;
-	TArray<AActor*> ActorsToIgnore;
-	ActorsToIgnore.Add(SourceCharacter);
+	TArray<AActor*> Actors;
+	if (!SourceCharacter || !ShapeSpec)
+	{
+		return Actors;
+	}
 
-	const FVector StartLocation = SourceCharacter->GetActorLocation() + SourceCharacter->GetActorForwardVector() * AttackRange;
-	UKismetSystemLibrary::SphereOverlapActors(
+	UWorld* World = SourceCharacter->GetWorld();
+	if (!World)
+	{
+		return Actors;
+	}
+
+	FCollisionObjectQueryParams ObjectQueryParams;
+	for (const TEnumAsByte<EObjectTypeQuery> ObjectType : ObjectTypes)
+	{
+		const ECollisionChannel CollisionChannel = UEngineTypes::ConvertToCollisionChannel(ObjectType);
+		ObjectQueryParams.AddObjectTypesToQuery(CollisionChannel);
+	}
+
+	if (!ObjectQueryParams.IsValid())
+	{
+		return Actors;
+	}
+
+	const FTransform ShapeTransform = ShapeSpec->MakeWorldTransform(SourceCharacter);
+	const FVector ShapeLocation = ShapeTransform.GetLocation();
+	const FQuat ShapeRotation = ShapeTransform.GetRotation();
+	const FCollisionShape CollisionShape = ShapeSpec->MakeCollisionShape();
+
+	FCollisionQueryParams QueryParams(TEXT("SIPAttackShape"), false, SourceCharacter);
+	QueryParams.AddIgnoredActor(SourceCharacter);
+
+	TArray<FOverlapResult> OverlapResults;
+	World->OverlapMultiByObjectType(
+		OverlapResults,
+		ShapeLocation,
+		ShapeRotation,
+		ObjectQueryParams,
+		CollisionShape,
+		QueryParams);
+
+	for (const FOverlapResult& OverlapResult : OverlapResults)
+	{
+		AActor* OverlappingActor = OverlapResult.GetActor();
+		if (!OverlappingActor || OverlappingActor == SourceCharacter)
+		{
+			continue;
+		}
+
+		if (ActorClassFilter && !OverlappingActor->IsA(ActorClassFilter))
+		{
+			continue;
+		}
+
+		Actors.AddUnique(OverlappingActor);
+	}
+
+	if (ShapeSpec->bDrawDebug)
+	{
+		ShapeSpec->DrawDebugShape(World, ShapeTransform, 1.0f);
+	}
+
+	return Actors;
+}
+
+TArray<ASIPCharacter*> USIPGameplayAbility_Attack::CollectCharacterTargets(ASIPCharacter* SourceCharacter) const
+{
+	const TArray<AActor*> OverlappingActors = CollectActorsByShape(
 		SourceCharacter,
-		StartLocation,
-		AttackRadius,
+		CharacterHitShape,
 		TArray<TEnumAsByte<EObjectTypeQuery>>{UEngineTypes::ConvertToObjectType(ECC_Pawn)},
-		ASIPCharacter::StaticClass(),
-		ActorsToIgnore,
-		OverlappingActors);
+		ASIPCharacter::StaticClass());
 
 	TArray<ASIPCharacter*> Targets;
 	for (AActor* OverlappingActor : OverlappingActors)
@@ -164,6 +237,75 @@ TArray<ASIPCharacter*> USIPGameplayAbility_Attack::CollectTargets(ASIPCharacter*
 	}
 
 	return Targets;
+}
+
+void USIPGameplayAbility_Attack::ApplyAttackHit(ASIPCharacter* SourceCharacter)
+{
+	if (!SourceCharacter)
+	{
+		return;
+	}
+
+	const TArray<ASIPCharacter*> Targets = CollectCharacterTargets(SourceCharacter);
+	for (ASIPCharacter* Target : Targets)
+	{
+		// 重构：近战伤害统一走 GAS GameplayEffect 流程（项目默认伤害 GE）。
+		USIPCombatStatics::ApplyDamageToTarget(Target, DamageAmount, SourceCharacter, this, nullptr);
+	}
+
+	ApplySurfaceImpact(SourceCharacter);
+
+	UE_LOG(LogSIPAbilitySystem, Log, TEXT("Attack ability hit %d target(s)."), Targets.Num());
+}
+
+void USIPGameplayAbility_Attack::ApplySurfaceImpact(ASIPCharacter* SourceCharacter) const
+{
+	if (!SourceCharacter || !bApplySurfaceImpact || !AttackElementTag.IsValid())
+	{
+		return;
+	}
+
+	const USIPAttackShapeSpec* ImpactShape = bUseCharacterHitShapeForSurfaceImpact
+		? CharacterHitShape.Get()
+		: SurfaceImpactShape.Get();
+	if (!ImpactShape)
+	{
+		return;
+	}
+
+	const FTransform ImpactShapeTransform = ImpactShape->MakeWorldTransform(SourceCharacter);
+
+	FSIPElementImpactContext ImpactContext;
+	ImpactContext.IncomingElement = AttackElementTag;
+	ImpactContext.SurfaceDamage = SurfaceImpactDamage;
+	ImpactContext.ImpactLocation = ImpactShapeTransform.GetLocation();
+	ImpactContext.SourceActor = SourceCharacter;
+	ImpactContext.InstigatorActor = SourceCharacter;
+
+	const TArray<AActor*> ReceiverCandidates = CollectActorsByShape(
+		SourceCharacter,
+		ImpactShape,
+		TArray<TEnumAsByte<EObjectTypeQuery>>{
+			UEngineTypes::ConvertToObjectType(ECC_WorldDynamic),
+			UEngineTypes::ConvertToObjectType(ECC_WorldStatic)
+		},
+		AActor::StaticClass());
+
+	int32 ReceiverCount = 0;
+	for (AActor* ReceiverCandidate : ReceiverCandidates)
+	{
+		if (!ReceiverCandidate || !ReceiverCandidate->Implements<USIPElementImpactReceiver>())
+		{
+			continue;
+		}
+
+		ISIPElementImpactReceiver::Execute_ReceiveElementImpact(ReceiverCandidate, ImpactContext);
+		++ReceiverCount;
+	}
+
+	UE_LOG(LogSIPAbilitySystem, Log, TEXT("Attack ability applied surface impact: %s, receivers=%d."),
+		*AttackElementTag.ToString(),
+		ReceiverCount);
 }
 
 /**
@@ -303,13 +445,7 @@ void USIPGameplayAbility_Attack::ExecuteLegacyAttack(ASIPCharacter* SourceCharac
 		}
 	}
 
-	const TArray<ASIPCharacter*> Targets = CollectTargets(SourceCharacter);
-	for (ASIPCharacter* Target : Targets)
-	{
-		Target->ApplyCombatDamage(DamageAmount, SourceCharacter);
-	}
-
-	UE_LOG(LogSIPAbilitySystem, Log, TEXT("Attack ability hit %d target(s)."), Targets.Num());
+	ApplyAttackHit(SourceCharacter);
 }
 
 /**
@@ -331,13 +467,9 @@ void USIPGameplayAbility_Attack::OnAttackHitWindowEvent(FGameplayEventData Paylo
 
 	bHasAppliedAttackHit = true;
 
-	const TArray<ASIPCharacter*> Targets = CollectTargets(SourceCharacter);
-	for (ASIPCharacter* Target : Targets)
-	{
-		Target->ApplyCombatDamage(DamageAmount, SourceCharacter);
-	}
+	ApplyAttackHit(SourceCharacter);
 
-	UE_LOG(LogSIPAbilitySystem, Log, TEXT("Attack ability hit %d target(s) during animation event [%s]."), Targets.Num(), *Payload.EventTag.ToString());
+	UE_LOG(LogSIPAbilitySystem, Verbose, TEXT("Attack ability applied hit during animation event [%s]."), *Payload.EventTag.ToString());
 }
 
 /**

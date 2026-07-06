@@ -18,7 +18,6 @@ public class SIP : ModuleRules
             "Core", 
             "CoreUObject", 
             "Engine",
-            "HTTP",
             "UMG",
             "GameplayTags",
             "InputCore", 
@@ -35,9 +34,8 @@ public class SIP : ModuleRules
             "NiagaraCore",
             "Niagara",
             "AIModule",
-            "NavigationSystem",
-            "Json",
-            "PCG" });
+            "PCG",
+            "DeveloperSettings" });
         
         PrivateDependencyModuleNames.AddRange(new string[] {
             "Slate",
