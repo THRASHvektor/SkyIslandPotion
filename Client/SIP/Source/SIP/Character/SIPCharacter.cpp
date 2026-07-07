@@ -1,4 +1,4 @@
-// Copyright Epic Games, Inc. All Rights Reserved.
+﻿// Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "SIPCharacter.h"
 #include "Engine/LocalPlayer.h"
@@ -34,6 +34,7 @@ ASIPCharacter::ASIPCharacter(const FObjectInitializer& ObjectInitializer)
 void ASIPCharacter::BeginPlay()
 {
 	Super::BeginPlay();
+	UE_LOG(LogSIPCharacter, Warning, TEXT("%s DDDDDDDDDDDDBeginPlay called."), *GetName());
 }
 
 // 在角色离开世界前回收 AbilitySet 赋予的能力和效果。
