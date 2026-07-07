@@ -26,11 +26,17 @@ void USIPElementReactionSubsystem::BuildReactionTable()
 	ReactionTable.FindOrAdd(SIPGameplayTags::Element_Ice).Add(
 		SIPGameplayTags::Element_Fire, SIPGameplayTags::Reaction_Melt);
 
-	// 水/治愈区域 + 冰药水 = 冻结：水面冰封，生成可行走平台
-	ReactionTable.FindOrAdd(SIPGameplayTags::Element_Heal).Add(
+	// 水区域 + 冰药水 = 冻结：水面冰封，生成可行走平台
+	ReactionTable.FindOrAdd(SIPGameplayTags::Element_Water).Add(
 		SIPGameplayTags::Element_Ice, SIPGameplayTags::Reaction_Freeze);
 
-	// 水/治愈区域 + 雷药水 = 感电：区域内所有敌人眩晕
+	// 水区域 + 雷药水 = 感电：区域内所有敌人眩晕
+	ReactionTable.FindOrAdd(SIPGameplayTags::Element_Water).Add(
+		SIPGameplayTags::Element_Thunder, SIPGameplayTags::Reaction_Electrify);
+
+	// Backward compatibility for older assets that still use Element.Heal as water.
+	ReactionTable.FindOrAdd(SIPGameplayTags::Element_Heal).Add(
+		SIPGameplayTags::Element_Ice, SIPGameplayTags::Reaction_Freeze);
 	ReactionTable.FindOrAdd(SIPGameplayTags::Element_Heal).Add(
 		SIPGameplayTags::Element_Thunder, SIPGameplayTags::Reaction_Electrify);
 

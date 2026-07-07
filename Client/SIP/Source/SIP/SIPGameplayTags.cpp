@@ -95,7 +95,8 @@ namespace SIPGameplayTags
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Element_Thunder, "Element.Thunder", "Thunder element - carried by thunder potions.");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Element_Wind,    "Element.Wind",    "Wind element - carried by wind potions.");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Element_Plant,   "Element.Plant",   "Plant element - forest zones and nature potions.");
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Element_Heal,    "Element.Heal",    "Heal/Water element - healing potions, acts as water in reactions.");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Element_Water,   "Element.Water",   "Water element - water surfaces and water reactions.");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Element_Heal,    "Element.Heal",    "Heal element - healing potions.");
 
 	// ==================== 群落标签 ====================
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Biome_Fire,   "Biome.Fire",   "Volcanic island biome - used by PCG island generator.");
@@ -106,8 +107,8 @@ namespace SIPGameplayTags
 	// ==================== 反应标签 ====================
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Reaction_Burn,      "Reaction.Burn",      "Plant+Fire:  vegetation removed, path revealed.");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Reaction_Melt,      "Reaction.Melt",      "Ice+Fire:    ice structures melt, hidden area exposed.");
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Reaction_Freeze,    "Reaction.Freeze",    "Heal+Ice:    water surface freezes into walkable platform.");
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Reaction_Electrify, "Reaction.Electrify", "Heal+Thunder: wet area electrified, enemies stunned.");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Reaction_Freeze,    "Reaction.Freeze",    "Water+Ice: water surface freezes into walkable platform.");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Reaction_Electrify, "Reaction.Electrify", "Water+Thunder: wet area electrified, enemies damaged or controlled.");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Reaction_Bloom,     "Reaction.Bloom",     "Plant+Wind:  spores spread, new resource nodes appear.");
 
 	// ==================== 区域状态标签 ====================
@@ -121,6 +122,12 @@ namespace SIPGameplayTags
 	// 用途：标识技能的冷却状态
 	// 使用场景：加到对应的cooldown GE里，GA会自动检查这个标签来判断技能是否在冷却中
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Cooldown_Dash, "Cooldown.Dash", "Dash cooldown.");
+
+	// ==================== SetByCaller 数据标签 ====================
+	// Z 说明：GE SetByCaller 使用的数据标签
+	// 用途：GE Modifier Magnitude 类型选 SetByCaller 时，DataTag 填这些标签，运行时通过 Spec.Data->SetSetByCallerMagnitude 传值
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(SIPData_Damage, "SIPData.Damage", "SetByCaller magnitude tag for damage GE.");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(SIPData_Heal,   "SIPData.Heal",   "SetByCaller magnitude tag for heal GE.");
 
 	// ==================== 标签查找函数 ====================
 	// Z 说明：运行时根据字符串查找标签

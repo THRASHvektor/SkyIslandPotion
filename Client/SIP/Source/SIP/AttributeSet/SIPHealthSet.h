@@ -20,7 +20,23 @@
 
 #include "AbilitySystemComponent.h"
 #include "AttributeSet.h"
+#include "GameplayEffectExtension.h"
 #include "SIPHealthSet.generated.h"
+
+/**
+ * Z 说明：
+ * ATTRIBUTE_ACCESSORS 宏 —— Lyra 风格
+ * 一次性生成 4 个访问器：
+ *   static FGameplayAttribute GetXxxAttribute();  // 属性引用
+ *   float GetXxx() const;                          // 读当前值
+ *   void  SetXxx(float NewVal);                    // 直接写当前值（走 ASC 内部路径）
+ *   void  InitXxx(float NewVal);                   // 初始化 base 值
+ */
+#define ATTRIBUTE_ACCESSORS(ClassName, PropertyName) \
+	GAMEPLAYATTRIBUTE_PROPERTY_GETTER(ClassName, PropertyName) \
+	GAMEPLAYATTRIBUTE_VALUE_GETTER(PropertyName) \
+	GAMEPLAYATTRIBUTE_VALUE_SETTER(PropertyName) \
+	GAMEPLAYATTRIBUTE_VALUE_INITTER(PropertyName)
 
 /**
  * Z 说明：
@@ -56,14 +72,10 @@ public:
 public:
 
 	/**
-	 * Z 说明：使用 GAS 宏生成属性 Getter 函数
-	 * 这些宏会自动生成 GetHealth()、GetMaxHealth() 等函数
-	 * 方便在其他代码中获取属性值
+	 * Z 说明：属性成员声明在前，访问器宏展开在后
+	 * 因为 GAMEPLAYATTRIBUTE_PROPERTY_GETTER 内部使用 GET_MEMBER_NAME_CHECKED
+	 * 需要成员在展开位置可见
 	 */
-	// 使用 GAS 宏定义 Getter 函数
-	GAMEPLAYATTRIBUTE_PROPERTY_GETTER(USIPHealthSet, Health);
-	GAMEPLAYATTRIBUTE_PROPERTY_GETTER(USIPHealthSet, MaxHealth);
-	GAMEPLAYATTRIBUTE_PROPERTY_GETTER(USIPHealthSet, Healing);
 
 	// Z 说明：当前生命值（主属性）
 	// Primary Attribute
@@ -75,12 +87,28 @@ public:
 	UPROPERTY(BlueprintReadOnly, Category = "SIP|Health", ReplicatedUsing = OnRep_MaxHealth)
 	FGameplayAttributeData MaxHealth;
 
-	// Z 说明：治疗量（临时属性）
+	// Z 说明：治疗量（临时属性 / meta）
 	// 用途：GE 使用，标记即将治疗的血量
-	// 特性：会在 PostAttributeChange 中被消费（减为0）
+	// 特性：会在 PostGameplayEffectExecute 中被消费（转移到 Health 并清零）
 	// Clamped between 0 and MaxHealth
 	UPROPERTY(BlueprintReadOnly, Category = "SIP|Health", ReplicatedUsing = OnRep_Healing)
 	FGameplayAttributeData Healing;
+
+	// Z 说明：伤害量（临时属性 / meta，不复制）
+	// 用途：伤害 GE 写入本属性，PostGameplayEffectExecute 里将其转移到 Health 上并清零
+	// 不需要网络复制（变化结果会体现在 Health 上，Health 本身会复制）
+	UPROPERTY(BlueprintReadOnly, Category = "SIP|Health|Meta")
+	FGameplayAttributeData Damage;
+
+	/**
+	 * Z 说明：使用 ATTRIBUTE_ACCESSORS 一次性生成属性访问器
+	 * 每个属性会得到 GetXxxAttribute() / GetXxx() / SetXxx() / InitXxx() 四个函数
+	 * 使得 PostGameplayEffectExecute 里能用 GetHealth() / SetHealth() 等语义化 API
+	 */
+	ATTRIBUTE_ACCESSORS(USIPHealthSet, Health);
+	ATTRIBUTE_ACCESSORS(USIPHealthSet, MaxHealth);
+	ATTRIBUTE_ACCESSORS(USIPHealthSet, Healing);
+	ATTRIBUTE_ACCESSORS(USIPHealthSet, Damage);
 
 	// Z 说明：属性变化时的标签缓存
 	// 用于在 GE 回调中识别是哪个属性发生了变化
@@ -127,6 +155,12 @@ protected:
 	 * 3. 更新 UI
 	 */
 	virtual void PostAttributeChange(const FGameplayAttribute& Attribute, float OldValue, float NewValue) override;
+
+	/**
+	 * Z 说明：GE 实际执行（Instant / 周期 Tick）完成后的回调
+	 * 用途：将临时的 Damage / Healing 属性转移到 Health，实现「所有伤害/治疗都走 GE」
+	 */
+	virtual void PostGameplayEffectExecute(const FGameplayEffectModCallbackData& Data) override;
 
 	/**
 	 * Z 说明：属性钳制
