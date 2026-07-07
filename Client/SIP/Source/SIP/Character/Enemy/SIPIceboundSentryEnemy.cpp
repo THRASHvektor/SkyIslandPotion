@@ -9,6 +9,11 @@
 #include "SIPLogCategory.h"
 #include "TimerManager.h"
 
+namespace
+{
+const FName SIPShadowCloakTag(TEXT("SIPShadowCloaked"));
+}
+
 ASIPIceboundSentryEnemy::ASIPIceboundSentryEnemy(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {
@@ -92,7 +97,7 @@ ASIPCharacter* ASIPIceboundSentryEnemy::FindBestPlayerTarget() const
 	{
 		const APlayerController* PlayerController = Iterator->Get();
 		ASIPCharacter* Candidate = PlayerController ? Cast<ASIPCharacter>(PlayerController->GetPawn()) : nullptr;
-		if (!Candidate || Candidate->IsDeadOrDying())
+		if (!Candidate || Candidate->IsDeadOrDying() || Candidate->ActorHasTag(SIPShadowCloakTag))
 		{
 			continue;
 		}
