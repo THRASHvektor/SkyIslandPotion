@@ -1,0 +1,98 @@
+[
+  {
+    "id": "healing_herb",
+    "name": "Healing Herb",
+    "type": "Material",
+    "description": "A common medicinal herb used to treat minor wounds and make basic healing medicine."
+  },
+  {
+    "id": "moon_grass",
+    "name": "Moon Grass",
+    "type": "Material",
+    "description": "A faintly glowing herb often used to make fever medicine and stabilize unstable magic."
+  },
+  {
+    "id": "bitter_root",
+    "name": "Bitter Root",
+    "type": "Material",
+    "description": "A bitter medicinal root commonly used to make painkillers and antidotes."
+  },
+  {
+    "id": "silver_leaf",
+    "name": "Silver Leaf",
+    "type": "Material",
+    "description": "A rare medicinal leaf used in stronger healing potions and purification medicine."
+  },
+  {
+    "id": "red_mushroom",
+    "name": "Red Mushroom",
+    "type": "Material",
+    "description": "A forest mushroom that can strengthen the effect of brewed potions after proper treatment."
+  },
+  {
+    "id": "mana_crystal_shard",
+    "name": "Mana Crystal Shard",
+    "type": "Material",
+    "description": "A small crystal shard containing magical energy, often used in alchemy and mana potion crafting."
+  },
+  {
+    "id": "clear_spring_water",
+    "name": "Clear Spring Water",
+    "type": "Material",
+    "description": "Clean spring water used as a base ingredient for many simple potions."
+  },
+  {
+    "id": "beast_bone_powder",
+    "name": "Beast Bone Powder",
+    "type": "Material",
+    "description": "Powder made from beast bones, often used to strengthen medicine for wounds and physical recovery."
+  },
+  {
+    "id": "small_health_potion",
+    "name": "Small Health Potion",
+    "type": "Potion",
+    "description": "A basic potion that restores a small amount of health and is useful for minor injuries."
+  },
+  {
+    "id": "medium_health_potion",
+    "name": "Medium Health Potion",
+    "type": "Potion",
+    "description": "A stronger healing potion suitable for serious wounds and battlefield recovery."
+  },
+  {
+    "id": "small_mana_potion",
+    "name": "Small Mana Potion",
+    "type": "Potion",
+    "description": "A basic potion that restores a small amount of mana, often used by apprentices and support mages."
+  },
+  {
+    "id": "medium_mana_potion",
+    "name": "Medium Mana Potion",
+    "type": "Potion",
+    "description": "A stronger mana potion suitable for long spellcasting, military support, and magical operations."
+  },
+  {
+    "id": "antidote_potion",
+    "name": "Antidote Potion",
+    "type": "Potion",
+    "description": "A potion used to relieve common poison effects from forests, caves, and swamps."
+  },
+  {
+    "id": "fever_medicine",
+    "name": "Fever Medicine",
+    "type": "Potion",
+    "description": "Medicine used to reduce high fever and treat abnormal heat-related symptoms."
+  },
+  {
+    "id": "wound_salve",
+    "name": "Wound Salve",
+    "type": "Potion",
+    "description": "A medical salve applied to cuts, scratches, and battlefield wounds."
+  },
+  {
+    "id": "purification_potion",
+    "name": "Purification Potion",
+    "type": "Potion",
+    "description": "A potion used to cleanse mild corruption, pollution, or unstable magical residue."
+  }
+]

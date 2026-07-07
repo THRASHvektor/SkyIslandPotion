@@ -1,0 +1,16 @@
+{
+  "local_hard_checks": [
+    "The returned reward item_id must exist in items.json.",
+    "The returned reward count must be a positive integer.",
+    "The submitted item_id must exist in items.json.",
+    "The player must actually have enough submitted items in player_state.json."
+  ],
+  "llm_responsibilities": [
+    "Judge whether the task was completed successfully.",
+    "Decide the tone and content of the NPC reply letter.",
+    "Decide what rewards are appropriate and why.",
+    "Suggest how the world state should change.",
+    "Connect current task results to long-term story memory."
+  ],
+  "recommended_prompt_rule": "The LLM may make story and reward decisions freely, but it must only use item_id values that exist in the provided items list."
+}

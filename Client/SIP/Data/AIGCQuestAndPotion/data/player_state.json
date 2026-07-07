@@ -1,0 +1,36 @@
+{
+  "player_id": "player_001",
+  "inventory": [
+    {
+      "item_id": "medium_mana_potion",
+      "count": 10
+    },
+    {
+      "item_id": "small_health_potion",
+      "count": 4
+    },
+    {
+      "item_id": "healing_herb",
+      "count": 8
+    },
+    {
+      "item_id": "clear_spring_water",
+      "count": 6
+    }
+  ],
+  "active_quests": [
+    {
+      "id": "quest_general_mana_supply",
+      "title": "Mana Potions for the Northern Army",
+      "npc_id": "npc_general_arden",
+      "request_letter": "Adventurer, the northern army requires a large amount of mana potions for an important operation. The details are not open for discussion. Bring what we need, and you will be paid properly.",
+      "requested_items": [
+        {
+          "item_id": "medium_mana_potion",
+          "count": 10
+        }
+      ]
+    }
+  ],
+  "completed_quests": []
+}

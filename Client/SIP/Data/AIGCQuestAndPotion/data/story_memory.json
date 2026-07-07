@@ -1,0 +1,27 @@
+{
+  "important_history": [],
+  "npc_relationships": [
+    {
+      "npc_id": "npc_general_arden",
+      "summary": "General Arden currently sees the player as a useful but unproven adventurer."
+    },
+    {
+      "npc_id": "npc_doctor_elin",
+      "summary": "Doctor Elin is cautiously hopeful that the player can help with medical problems."
+    },
+    {
+      "npc_id": "npc_refugee_mira",
+      "summary": "Mira has not met the player yet."
+    },
+    {
+      "npc_id": "npc_merchant_silas",
+      "summary": "Silas knows the player only as a potential customer or helper."
+    }
+  ],
+  "open_story_threads": [
+    {
+      "id": "border_war",
+      "summary": "Military preparations near the northern border may lead to war, supply shortages, refugees, and moral consequences for the player."
+    }
+  ]
+}

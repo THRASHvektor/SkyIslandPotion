@@ -1,0 +1,23 @@
+{
+  "judgement": {
+    "status": "success | partial_success | failure",
+    "quality": "excellent | good | acceptable | poor",
+    "reason": "Explain how well the player completed the task."
+  },
+  "reply_letter": "NPC reply letter to the player.",
+  "reward_items": [
+    {
+      "item_id": "Item id from items.json only.",
+      "count": "Positive integer.",
+      "reason": "Why this reward fits the task result, NPC, world state, and history."
+    }
+  ],
+  "world_update": {
+    "public_summary": "What people in the world may notice after this task.",
+    "hidden_summary": "Author-only truth or consequence that may influence later quests.",
+    "possible_future_quests": [
+      "Possible future quest idea influenced by this result."
+    ]
+  },
+  "memory_summary": "Short summary to append to story_memory.json after local validation."
+}

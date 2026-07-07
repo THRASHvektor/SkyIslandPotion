@@ -1,0 +1,26 @@
+[
+  {
+    "id": "npc_general_arden",
+    "name": "General Arden",
+    "role": "General",
+    "description": "A strict northern general responsible for defending the border. He is calm, strategic, and often hides the full reason behind his requests."
+  },
+  {
+    "id": "npc_refugee_mira",
+    "name": "Mira",
+    "role": "Refugee",
+    "description": "A tired refugee from Ash Valley. Her home was destroyed by war, and she is trying to help wounded survivors."
+  },
+  {
+    "id": "npc_doctor_elin",
+    "name": "Doctor Elin",
+    "role": "Village Doctor",
+    "description": "A kind village doctor who cares deeply about patients and often needs herbs or medicine to help villagers and refugees."
+  },
+  {
+    "id": "npc_merchant_silas",
+    "name": "Silas",
+    "role": "Merchant",
+    "description": "A traveling merchant who notices changes in supply, prices, trade routes, and unusual military purchases."
+  }
+]
