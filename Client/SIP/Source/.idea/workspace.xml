@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="52e8ffbb-a5f4-4a09-8ea1-3004e49d89a4" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/../Config/DefaultEngine.ini" beforeDir="false" afterPath="$PROJECT_DIR$/../Config/DefaultEngine.ini" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../Content/Blueprints/BP_Enemy.uasset" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../Content/Blueprints/BP_IslandSpawner.uasset" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../Content/Blueprints/BP_ZoneActor.uasset" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../Content/Blueprints/Pet/BP_Pet_Base.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/../Content/Blueprints/Pet/BP_Pet_Base.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../Content/Blueprints/Pet/BP_Pet_Cat.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/../Content/Blueprints/Pet/BP_Pet_Cat.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../Content/Characters/Pet/Rock_Collection_04/Demo/Demo_01.umap" beforeDir="false" afterPath="$PROJECT_DIR$/../Content/Characters/Pet/Rock_Collection_04/Demo/Demo_01.umap" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../Content/Characters/Pet/Rock_Collection_04/MasterMaterial/MM_Rocks.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/../Content/Characters/Pet/Rock_Collection_04/MasterMaterial/MM_Rocks.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../Content/Characters/Pet/Rock_Collection_04/MasterMaterial/MaterialFunctions/MF_BaseColor_Controls.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/../Content/Characters/Pet/Rock_Collection_04/MasterMaterial/MaterialFunctions/MF_BaseColor_Controls.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../Content/Characters/Pet/Rock_Collection_04/MasterMaterial/MaterialFunctions/MF_NormalControls.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/../Content/Characters/Pet/Rock_Collection_04/MasterMaterial/MaterialFunctions/MF_NormalControls.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../Content/Characters/Pet/Rock_Collection_04/MasterMaterial/Textures/T_Empty_LinearWhite.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/../Content/Characters/Pet/Rock_Collection_04/MasterMaterial/Textures/T_Empty_LinearWhite.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../Content/Characters/Pet/Rock_Collection_04/MasterMaterial/Textures/T_Empty_Normal.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/../Content/Characters/Pet/Rock_Collection_04/MasterMaterial/Textures/T_Empty_Normal.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../Content/Characters/Pet/Rock_Collection_04/MasterMaterial/Textures/T_Empty_White.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/../Content/Characters/Pet/Rock_Collection_04/MasterMaterial/Textures/T_Empty_White.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../Content/Characters/Pet/Rock_Collection_04/Meshes/Rock_01/Materials/MI_Rock_01.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/../Content/Characters/Pet/Rock_Collection_04/Meshes/Rock_01/Materials/MI_Rock_01.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../Content/Characters/Pet/Rock_Collection_04/Meshes/Rock_01/StaticMeshes/SM_Rock_01.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/../Content/Characters/Pet/Rock_Collection_04/Meshes/Rock_01/StaticMeshes/SM_Rock_01.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../Content/Characters/Pet/Rock_Collection_04/Meshes/Rock_01/Textures/T_Rock_01_A.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/../Content/Characters/Pet/Rock_Collection_04/Meshes/Rock_01/Textures/T_Rock_01_A.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../Content/Characters/Pet/Rock_Collection_04/Meshes/Rock_01/Textures/T_Rock_01_N.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/../Content/Characters/Pet/Rock_Collection_04/Meshes/Rock_01/Textures/T_Rock_01_N.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../Content/Characters/Pet/Rock_Collection_04/Meshes/Rock_01/Textures/T_Rock_01_ORM.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/../Content/Characters/Pet/Rock_Collection_04/Meshes/Rock_01/Textures/T_Rock_01_ORM.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../Content/Characters/Pet/Rock_Collection_04/Meshes/Rock_02/Materials/MI_Rock_02.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/../Content/Characters/Pet/Rock_Collection_04/Meshes/Rock_02/Materials/MI_Rock_02.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../Content/Characters/Pet/Rock_Collection_04/Meshes/Rock_02/StaticMeshes/SM_Rock_02.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/../Content/Characters/Pet/Rock_Collection_04/Meshes/Rock_02/StaticMeshes/SM_Rock_02.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../Content/Characters/Pet/Rock_Collection_04/Meshes/Rock_02/Textures/T_Rock_02_A.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/../Content/Characters/Pet/Rock_Collection_04/Meshes/Rock_02/Textures/T_Rock_02_A.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../Content/Characters/Pet/Rock_Collection_04/Meshes/Rock_02/Textures/T_Rock_02_N.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/../Content/Characters/Pet/Rock_Collection_04/Meshes/Rock_02/Textures/T_Rock_02_N.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../Content/Characters/Pet/Rock_Collection_04/Meshes/Rock_02/Textures/T_Rock_02_ORM.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/../Content/Characters/Pet/Rock_Collection_04/Meshes/Rock_02/Textures/T_Rock_02_ORM.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../Content/Characters/Pet/Rock_Collection_04/Meshes/Rock_03/Materials/MI_Rock_03.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/../Content/Characters/Pet/Rock_Collection_04/Meshes/Rock_03/Materials/MI_Rock_03.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../Content/Characters/Pet/Rock_Collection_04/Meshes/Rock_03/StaticMeshes/SM_Rock_03.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/../Content/Characters/Pet/Rock_Collection_04/Meshes/Rock_03/StaticMeshes/SM_Rock_03.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../Content/Characters/Pet/Rock_Collection_04/Meshes/Rock_03/Textures/T_Rock_03_A.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/../Content/Characters/Pet/Rock_Collection_04/Meshes/Rock_03/Textures/T_Rock_03_A.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../Content/Characters/Pet/Rock_Collection_04/Meshes/Rock_03/Textures/T_Rock_03_N.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/../Content/Characters/Pet/Rock_Collection_04/Meshes/Rock_03/Textures/T_Rock_03_N.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../Content/Characters/Pet/Rock_Collection_04/Meshes/Rock_03/Textures/T_Rock_03_ORM.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/../Content/Characters/Pet/Rock_Collection_04/Meshes/Rock_03/Textures/T_Rock_03_ORM.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../Content/Characters/Pet/Rock_Collection_04/Meshes/Rock_04/Materials/MI_Rock_04.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/../Content/Characters/Pet/Rock_Collection_04/Meshes/Rock_04/Materials/MI_Rock_04.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../Content/Characters/Pet/Rock_Collection_04/Meshes/Rock_04/StaticMeshes/SM_Rock_04.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/../Content/Characters/Pet/Rock_Collection_04/Meshes/Rock_04/StaticMeshes/SM_Rock_04.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../Content/Characters/Pet/Rock_Collection_04/Meshes/Rock_04/Textures/T_Rock_04_A.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/../Content/Characters/Pet/Rock_Collection_04/Meshes/Rock_04/Textures/T_Rock_04_A.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../Content/Characters/Pet/Rock_Collection_04/Meshes/Rock_04/Textures/T_Rock_04_N.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/../Content/Characters/Pet/Rock_Collection_04/Meshes/Rock_04/Textures/T_Rock_04_N.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../Content/Characters/Pet/Rock_Collection_04/Meshes/Rock_04/Textures/T_Rock_04_ORM.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/../Content/Characters/Pet/Rock_Collection_04/Meshes/Rock_04/Textures/T_Rock_04_ORM.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../Content/Characters/Pet/Rock_Collection_04/Meshes/Rock_05/Materials/MI_Rock_05.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/../Content/Characters/Pet/Rock_Collection_04/Meshes/Rock_05/Materials/MI_Rock_05.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../Content/Characters/Pet/Rock_Collection_04/Meshes/Rock_05/StaticMeshes/SM_Rock_05.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/../Content/Characters/Pet/Rock_Collection_04/Meshes/Rock_05/StaticMeshes/SM_Rock_05.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../Content/Characters/Pet/Rock_Collection_04/Meshes/Rock_05/Textures/T_Rock_05_A.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/../Content/Characters/Pet/Rock_Collection_04/Meshes/Rock_05/Textures/T_Rock_05_A.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../Content/Characters/Pet/Rock_Collection_04/Meshes/Rock_05/Textures/T_Rock_05_N.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/../Content/Characters/Pet/Rock_Collection_04/Meshes/Rock_05/Textures/T_Rock_05_N.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../Content/Characters/Pet/Rock_Collection_04/Meshes/Rock_05/Textures/T_Rock_05_ORM.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/../Content/Characters/Pet/Rock_Collection_04/Meshes/Rock_05/Textures/T_Rock_05_ORM.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../Content/Characters/Pet/Rock_Collection_04/Meshes/Rock_06/Materials/MI_Rock_06.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/../Content/Characters/Pet/Rock_Collection_04/Meshes/Rock_06/Materials/MI_Rock_06.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../Content/Characters/Pet/Rock_Collection_04/Meshes/Rock_06/StaticMeshes/SM_Rock_06.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/../Content/Characters/Pet/Rock_Collection_04/Meshes/Rock_06/StaticMeshes/SM_Rock_06.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../Content/Characters/Pet/Rock_Collection_04/Meshes/Rock_06/Textures/T_Rock_06_A.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/../Content/Characters/Pet/Rock_Collection_04/Meshes/Rock_06/Textures/T_Rock_06_A.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../Content/Characters/Pet/Rock_Collection_04/Meshes/Rock_06/Textures/T_Rock_06_N.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/../Content/Characters/Pet/Rock_Collection_04/Meshes/Rock_06/Textures/T_Rock_06_N.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../Content/Characters/Pet/Rock_Collection_04/Meshes/Rock_06/Textures/T_Rock_06_ORM.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/../Content/Characters/Pet/Rock_Collection_04/Meshes/Rock_06/Textures/T_Rock_06_ORM.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../Content/Characters/Pet/Rock_Collection_04/Meshes/Rock_07/Materials/MI_Rock_07.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/../Content/Characters/Pet/Rock_Collection_04/Meshes/Rock_07/Materials/MI_Rock_07.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../Content/Characters/Pet/Rock_Collection_04/Meshes/Rock_07/StaticMeshes/SM_Rock_07.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/../Content/Characters/Pet/Rock_Collection_04/Meshes/Rock_07/StaticMeshes/SM_Rock_07.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../Content/Characters/Pet/Rock_Collection_04/Meshes/Rock_07/Textures/T_Rock_07_A.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/../Content/Characters/Pet/Rock_Collection_04/Meshes/Rock_07/Textures/T_Rock_07_A.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../Content/Characters/Pet/Rock_Collection_04/Meshes/Rock_07/Textures/T_Rock_07_N.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/../Content/Characters/Pet/Rock_Collection_04/Meshes/Rock_07/Textures/T_Rock_07_N.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../Content/Characters/Pet/Rock_Collection_04/Meshes/Rock_07/Textures/T_Rock_07_ORM.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/../Content/Characters/Pet/Rock_Collection_04/Meshes/Rock_07/Textures/T_Rock_07_ORM.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../Content/Maps/GameplayLevel/NewBlueprint.uasset" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../Content/Maps/GameplayTest/ElementReaction/ElementReactionTest.umap" beforeDir="false" afterPath="$PROJECT_DIR$/../Content/Maps/GameplayTest/ElementReaction/ElementReactionTest.umap" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../Content/Maps/GameplayTest/ElementReaction/VisualActor_Ice.uasset" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../Content/Maps/GameplayTest/ElementReaction/VisualActor_Plant.uasset" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../Content/Maps/GameplayTest/ElementReaction/VisualActor_Water.uasset" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../Content/Maps/GameplayTest/ElementReaction/ZoneActor_Ice.uasset" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../Content/Maps/GameplayTest/ElementReaction/ZoneActor_Plant.uasset" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../Content/Maps/GameplayTest/ElementReaction/ZoneActor_Water.uasset" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../Content/Maps/Map1/Map1.umap" beforeDir="false" afterPath="$PROJECT_DIR$/../Content/Maps/Map1/Map1.umap" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../Content/Maps/Map_Pet/Map_Pet.umap" beforeDir="false" afterPath="$PROJECT_DIR$/../Content/Maps/Map_Pet/Map_Pet.umap" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../Content/Maps/ThirdPersonMap.umap" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../Content/Maps/ThirdPersonMap/PCG_ForestVegetation.uasset" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../Content/__ExternalActors__/Maps/ThirdPersonMap/ThirdPersonMap/5/Z3/UICATXGJRF30LF0IZTAELK.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/../Content/__ExternalActors__/Maps/ThirdPersonMap/ThirdPersonMap/5/Z3/UICATXGJRF30LF0IZTAELK.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../Content/__ExternalActors__/Maps/ThirdPersonMap/ThirdPersonMap/7/IH/YGOSSTUZRQ1G8MQKGAUTA1.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/../Content/__ExternalActors__/Maps/ThirdPersonMap/ThirdPersonMap/7/IH/YGOSSTUZRQ1G8MQKGAUTA1.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../Content/__ExternalActors__/Maps/ThirdPersonMap/ThirdPersonMap/A/MD/WH5DEQ0Z970TG54XSMJIR6.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/../Content/__ExternalActors__/Maps/ThirdPersonMap/ThirdPersonMap/A/MD/WH5DEQ0Z970TG54XSMJIR6.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/SIP/AI/SIPPetAIController.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/SIP/AI/SIPPetAIController.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/SIP/AI/SIPPetAIController.h" beforeDir="false" afterPath="$PROJECT_DIR$/SIP/AI/SIPPetAIController.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/SIP/Character/Components/SIPPetCliffBridgeComponent.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/SIP/Character/Components/SIPPetCliffBridgeComponent.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/SIP/Character/Components/SIPPetCliffBridgeComponent.h" beforeDir="false" afterPath="$PROJECT_DIR$/SIP/Character/Components/SIPPetCliffBridgeComponent.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/SIP/Character/Components/SIPPetPersonalityComponent.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/SIP/Character/Components/SIPPetPersonalityComponent.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/SIP/Character/Components/SIPPetPersonalityComponent.h" beforeDir="false" afterPath="$PROJECT_DIR$/SIP/Character/Components/SIPPetPersonalityComponent.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/SIP/Character/Components/SIPPetPersonalityJsonComponent.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/SIP/Character/Components/SIPPetPersonalityJsonComponent.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/SIP/Character/SIPPetCharacter.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/SIP/Character/SIPPetCharacter.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/SIP/Character/SIPPetPromptUIActor.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/SIP/Character/SIPPetPromptUIActor.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/SIP/Character/SIPPetPromptUIActor.h" beforeDir="false" afterPath="$PROJECT_DIR$/SIP/Character/SIPPetPromptUIActor.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/SIP/SIP.Build.cs" beforeDir="false" afterPath="$PROJECT_DIR$/SIP/SIP.Build.cs" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/../../.." />
+  </component>
+  <component name="HighlightingSettingsPerFile">
+    <setting file="file://$PROJECT_DIR$/SIP/World/SIPPetElementalFieldActor.h" root0="SKIP_HIGHLIGHTING" />
+  </component>
+  <component name="ProjectColorInfo"><![CDATA[{
+  "associatedIndex": 1
+}]]></component>
+  <component name="ProjectId" id="3G7WgwRYYvf8pfGV55uYkskQo7X" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "git-widget-placeholder": "origin/feature/Pet",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "vue.rearranger.settings.migration": "true"
+  }
+}]]></component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="52e8ffbb-a5f4-4a09-8ea1-3004e49d89a4" name="Changes" comment="" />
+      <created>1783323207949</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1783323207949</updated>
+      <workItem from="1783323209508" duration="828000" />
+    </task>
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+  <component name="UnityProjectConfiguration" hasMinimizedUI="false" />
+  <component name="VcsManagerConfiguration">
+    <option name="CLEAR_INITIAL_COMMIT_MESSAGE" value="true" />
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <breakpoint enabled="true" type="DotNet_Exception_Breakpoints">
+          <properties exception="System.OperationCanceledException" breakIfHandledByOtherCode="false" displayValue="System.OperationCanceledException" />
+          <option name="timeStamp" value="1" />
+        </breakpoint>
+        <breakpoint enabled="true" type="DotNet_Exception_Breakpoints">
+          <properties exception="System.Threading.Tasks.TaskCanceledException" breakIfHandledByOtherCode="false" displayValue="System.Threading.Tasks.TaskCanceledException" />
+          <option name="timeStamp" value="2" />
+        </breakpoint>
+        <breakpoint enabled="true" type="DotNet_Exception_Breakpoints">
+          <properties exception="System.Threading.ThreadAbortException" breakIfHandledByOtherCode="false" displayValue="System.Threading.ThreadAbortException" />
+          <option name="timeStamp" value="3" />
+        </breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
+  </component>
+</project>

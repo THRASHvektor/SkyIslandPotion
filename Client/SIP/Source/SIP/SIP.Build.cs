@@ -34,6 +34,9 @@ public class SIP : ModuleRules
             "NiagaraCore",
             "Niagara",
             "AIModule",
+            "NavigationSystem",
+            "HTTP",
+            "Json",
             "PCG",
             "DeveloperSettings" });
         
